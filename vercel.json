@@ -1,5 +1,5 @@
 {
   "routes": [
-    { "src": "/", "dest": "/salecomps_v3.html" }
+    { "src": "/", "dest": "/salecomps_v5.html" }
   ]
 }
