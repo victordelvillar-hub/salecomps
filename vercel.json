@@ -1,5 +1,1 @@
-{
-  "routes": [
-    { "src": "/", "dest": "/salecomps_v8.html" }
-  ]
-}
+{ "src": "/", "dest": "/salecomps_v9.html" }
