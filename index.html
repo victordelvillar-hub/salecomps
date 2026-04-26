@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>AgentEdge SaleComps — DC Sales Database v11</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a1628">
+<meta name="mobile-web-app-capable" content="yes">
+
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SaleComps">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+<!-- Splash / description -->
+<meta name="description" content="AgentEdge SaleComps — DC real estate comp database for agents">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -39,6 +53,97 @@ body {
   color: var(--white);
   height: 100vh;
   overflow: hidden;
+}
+
+/* ── PWA INSTALL BANNER ── */
+#pwa-install-banner {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--navy-mid);
+  border-top: 1px solid rgba(240,165,0,0.3);
+  padding: 12px 16px;
+  z-index: 10000;
+  flex-direction: column;
+  gap: 10px;
+  backdrop-filter: blur(10px);
+}
+#pwa-install-banner.show { display: flex; }
+.pwa-banner-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pwa-banner-text { flex: 1; }
+.pwa-banner-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+}
+.pwa-banner-sub {
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 2px;
+}
+.pwa-install-btn {
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pwa-install-btn:hover { background: var(--gold-light); }
+.pwa-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.pwa-ios-hint {
+  font-size: 12px;
+  color: var(--gray);
+  text-align: center;
+  padding: 4px 0;
+  display: none;
+}
+.pwa-ios-hint span { color: var(--gold); }
+#pwa-update-toast {
+  display: none;
+  position: fixed;
+  top: 64px; right: 12px;
+  background: var(--navy-mid);
+  border: 1px solid rgba(240,165,0,0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 10001;
+  font-size: 13px;
+  color: var(--white);
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--card-shadow);
+}
+#pwa-update-toast.show { display: flex; }
+.pwa-update-btn {
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
 }
 
 /* ── LOGIN ── */
@@ -2135,6 +2240,97 @@ function copyCompsList(){
     setTimeout(()=>{ btn.textContent=orig; btn.style.background=''; },2000);
   }).catch(()=>alert('Copy failed — try again'));
 }
+</script>
+
+<!-- ── PWA INSTALL BANNER ── -->
+<div id="pwa-install-banner">
+  <div class="pwa-banner-row">
+    <div class="pwa-banner-text">
+      <div class="pwa-banner-title">📲 Install SaleComps</div>
+      <div class="pwa-banner-sub">Add to home screen — works offline</div>
+    </div>
+    <button class="pwa-install-btn" id="pwa-install-btn">Install</button>
+    <button class="pwa-dismiss-btn" id="pwa-dismiss-btn">×</button>
+  </div>
+  <div class="pwa-ios-hint" id="pwa-ios-hint">
+    Tap <span>Share ↑</span> then <span>"Add to Home Screen"</span>
+  </div>
+</div>
+
+<!-- ── PWA UPDATE TOAST ── -->
+<div id="pwa-update-toast">
+  <span>🔄 Update available</span>
+  <button class="pwa-update-btn" id="pwa-update-btn">Refresh</button>
+</div>
+
+<script>
+(function() {
+  if (!('serviceWorker' in navigator)) return;
+
+  let deferredPrompt = null;
+  let swReg = null;
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  window.addEventListener('load', async () => {
+    try {
+      swReg = await navigator.serviceWorker.register('/service-worker.js');
+      console.log('[PWA] SW registered:', swReg.scope);
+      swReg.addEventListener('updatefound', () => {
+        const nw = swReg.installing;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            const toast = document.getElementById('pwa-update-toast');
+            if (toast) toast.classList.add('show');
+          }
+        });
+      });
+    } catch (e) { console.warn('[PWA] SW failed:', e); }
+  });
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone && !sessionStorage.getItem('pwa-dismissed')) showBanner(false);
+  });
+
+  if (isIOS && !isStandalone && !sessionStorage.getItem('pwa-dismissed')) {
+    setTimeout(() => showBanner(true), 3500);
+  }
+
+  function showBanner(ios) {
+    const b = document.getElementById('pwa-install-banner');
+    if (!b) return;
+    document.getElementById('pwa-install-btn').style.display = ios ? 'none' : 'block';
+    document.getElementById('pwa-ios-hint').style.display = ios ? 'block' : 'none';
+    b.classList.add('show');
+  }
+
+  function hideBanner() {
+    const b = document.getElementById('pwa-install-banner');
+    if (b) b.classList.remove('show');
+    sessionStorage.setItem('pwa-dismissed', '1');
+  }
+
+  document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    hideBanner();
+  });
+
+  document.getElementById('pwa-dismiss-btn').addEventListener('click', hideBanner);
+
+  document.getElementById('pwa-update-btn').addEventListener('click', () => {
+    if (swReg && swReg.waiting) swReg.waiting.postMessage('SKIP_WAITING');
+    navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
+  });
+
+  window.addEventListener('appinstalled', hideBanner);
+})();
 </script>
 </body>
 </html>
