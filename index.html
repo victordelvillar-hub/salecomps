@@ -1460,6 +1460,14 @@ function renderList(props){
   });
 }
 
+// ── SAFE SHOW DETAIL — respects CMA mode ──
+// Used by comp list clicks so they never clobber the CMA subject
+function safeShowDetail(id){
+  if(_cmaMode) return; // in CMA mode, comp list is read-only — do nothing
+  const p=D.find(x=>x.id===id||x.id===+id);
+  if(p) showDetail(p);
+}
+
 // ── DETAIL ──
 function showDetail(p){
   // If replace mode is active, intercept the click
@@ -1603,7 +1611,7 @@ function renderCompTier(items, tierClass, label){
       <div class="comp-tier-line"></div>
     </div>
     ${items.map(c=>`
-      <div class="comp-item ${tierClass===('contract')?'contract-item':tierClass==='active'?'active-item':''}" onclick="showDetail(D.find(x=>x.id===${c.id}))">
+      <div class="comp-item ${tierClass===('contract')?'contract-item':tierClass==='active'?'active-item':''}" onclick="safeShowDetail(${c.id})">
         <div>
           <div class="comp-addr">${c.a}</div>
           <div class="comp-meta">${c.z} · ${statusLabel(c.s)} · ${c.distNum.toFixed(2)} mi away</div>
