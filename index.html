@@ -1372,11 +1372,10 @@ function showHeatLegend(minP, maxP){
   document.getElementById('heat-legend-max').textContent=fmtK(maxP);
 }
 
-// ── ZIP CHOROPLETH (true boundary polygons via Census TIGER GeoJSON) ──
+// ── ZIP CHOROPLETH — fetches dc-zip-boundaries.json (same origin, no CORS) ──
 function renderZipChoropleth(){
   if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
 
-  // Build avg price per ZIP from loaded data
   const zipData={};
   D.forEach(p=>{
     if(!p.z||!p.p) return;
@@ -1394,102 +1393,52 @@ function renderZipChoropleth(){
   const minP=Math.min(...prices), maxP=Math.max(...prices);
   showHeatLegend(minP,maxP);
 
-  // DC ZIPs we care about
-  const DC_ZIPS = new Set(['20001','20002','20003','20004','20005','20006','20007',
-    '20008','20009','20010','20011','20012','20015','20016','20017','20018',
-    '20019','20020','20024','20032','20036','20037']);
-
-  // Fetch real ZIP boundary GeoJSON from Census TIGER (ZCTA5 layer, filtered to DC ZIPs)
-  // Using the ArcGIS-hosted Census ZCTA layer — no CORS issues, no API key needed
-  const zipList = Object.keys(avgs).filter(z=>DC_ZIPS.has(z)).join("','");
-  const whereClause = encodeURIComponent(`ZCTA5CE20 IN ('${zipList}')`);
-  const url = `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_ZIP_Code_Areas/FeatureServer/0/query?where=${whereClause}&outFields=ZIP_CODE&outSR=4326&f=geojson`;
-
-  // Try Census TIGER first, fall back to OpenDataDC, then embedded data
-  function applyGeoJSON(geojson, zipField){
-    if(!geojson||!geojson.features||!geojson.features.length) return false;
+  function paintGeoJSON(geojson){
     const layers=[];
-    geojson.features.forEach(feature=>{
-      const zip=(feature.properties[zipField]||'').toString().trim();
-      if(!DC_ZIPS.has(zip)||!avgs[zip]) return;
+    geojson.features.forEach(f=>{
+      const zip=(f.properties.ZIP||'').toString();
+      if(!avgs[zip]) return;
       const t=(avgs[zip]-minP)/(maxP-minP||1);
-      const fillColor=heatColor(t,0.5);
-      const poly=L.geoJSON(feature,{
-        style:{color:'rgba(255,255,255,0.4)',weight:1.5,fillColor:fillColor,fillOpacity:0.55}
+      const poly=L.geoJSON(f,{
+        style:{color:'rgba(255,255,255,0.35)',weight:1.5,fillColor:heatColor(t,0.5),fillOpacity:0.55}
       }).bindTooltip('ZIP '+zip+'<br>Avg: $'+Math.round(avgs[zip]/1000)+'K',
         {permanent:false,className:'zip-tip',sticky:true});
       layers.push(poly);
     });
-    if(!layers.length) return false;
-    zipLayer=L.layerGroup(layers).addTo(map);
-    return true;
+    if(layers.length) zipLayer=L.layerGroup(layers).addTo(map);
   }
 
-  // Source 1: Census TIGER via ArcGIS REST (ZCTA 2020)
-  const tigerUrl=`https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/PUMA_TAD_TAZ_UGA_ZCTA/MapServer/2/query?where=GEOID+IN+(${Object.keys(avgs).filter(z=>DC_ZIPS.has(z)).map(z=>"'"+z+"'").join(',')})&outFields=GEOID&outSR=4326&f=geojson`;
-
-  fetch(tigerUrl)
-    .then(r=>{ if(!r.ok) throw new Error('TIGER failed'); return r.json(); })
-    .then(geojson=>{
-      if(applyGeoJSON(geojson,'GEOID')) return;
-      throw new Error('No features from TIGER');
-    })
+  // Same-origin fetch — no CORS, works from Vercel
+  fetch('dc-zip-boundaries.json')
+    .then(r=>{ if(!r.ok) throw new Error('missing'); return r.json(); })
+    .then(geo=>paintGeoJSON(geo))
     .catch(()=>{
-      // Source 2: DC Open Data ZCTA
-      const dcUrl=`https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Demographic_WebMercator/MapServer/9/query?where=1%3D1&outFields=ZIPCODE&outSR=4326&f=geojson`;
-      return fetch(dcUrl)
-        .then(r=>{ if(!r.ok) throw new Error('DC Open Data failed'); return r.json(); })
-        .then(geojson=>{
-          if(applyGeoJSON(geojson,'ZIPCODE')) return;
-          throw new Error('No features from DC Open Data');
-        });
-    })
-    .catch(err=>{
-      console.error('ZIP Heat: all GeoJSON sources failed, using embedded fallback.',err);
-      // Source 3: Embedded accurate DC ZIP boundaries (Census ZCTA simplified)
-      renderZipChoroplethEmbedded(avgs,minP,maxP,DC_ZIPS);
+      // Inline fallback (simplified shapes — upload dc-zip-boundaries.json for real boundaries)
+      paintGeoJSON({"type":"FeatureCollection","features":[
+        {"type":"Feature","properties":{"ZIP":"20001"},"geometry":{"type":"Polygon","coordinates":[[[-77.0229,38.9117],[-77.0156,38.9117],[-77.0091,38.9109],[-77.0088,38.9000],[-77.0088,38.8963],[-77.0155,38.8963],[-77.0229,38.8963],[-77.0229,38.9000],[-77.0229,38.9117]]]}},
+        {"type":"Feature","properties":{"ZIP":"20002"},"geometry":{"type":"Polygon","coordinates":[[[-76.9973,38.9117],[-76.9840,38.9109],[-76.9745,38.9117],[-76.9745,38.8860],[-76.9860,38.8860],[-76.9973,38.8860],[-76.9973,38.9117]]]}},
+        {"type":"Feature","properties":{"ZIP":"20003"},"geometry":{"type":"Polygon","coordinates":[[[-77.0030,38.8860],[-76.9973,38.8860],[-76.9800,38.8700],[-76.9745,38.8620],[-76.9900,38.8620],[-77.0030,38.8620],[-77.0030,38.8860]]]}},
+        {"type":"Feature","properties":{"ZIP":"20004"},"geometry":{"type":"Polygon","coordinates":[[[-77.0280,38.9003],[-77.0229,38.9003],[-77.0155,38.8963],[-77.0155,38.8910],[-77.0280,38.8890],[-77.0280,38.9003]]]}},
+        {"type":"Feature","properties":{"ZIP":"20005"},"geometry":{"type":"Polygon","coordinates":[[[-77.0360,38.9117],[-77.0229,38.9117],[-77.0229,38.8963],[-77.0280,38.8963],[-77.0360,38.8963],[-77.0360,38.9117]]]}},
+        {"type":"Feature","properties":{"ZIP":"20006"},"geometry":{"type":"Polygon","coordinates":[[[-77.0500,38.9003],[-77.0360,38.9003],[-77.0360,38.8880],[-77.0500,38.8880],[-77.0500,38.9003]]]}},
+        {"type":"Feature","properties":{"ZIP":"20007"},"geometry":{"type":"Polygon","coordinates":[[[-77.0900,38.9220],[-77.0550,38.9220],[-77.0550,38.9003],[-77.0600,38.8960],[-77.0900,38.8960],[-77.0900,38.9220]]]}},
+        {"type":"Feature","properties":{"ZIP":"20008"},"geometry":{"type":"Polygon","coordinates":[[[-77.0900,38.9480],[-77.0550,38.9480],[-77.0550,38.9220],[-77.0900,38.9220],[-77.0900,38.9480]]]}},
+        {"type":"Feature","properties":{"ZIP":"20009"},"geometry":{"type":"Polygon","coordinates":[[[-77.0550,38.9300],[-77.0220,38.9300],[-77.0220,38.9117],[-77.0550,38.9117],[-77.0550,38.9300]]]}},
+        {"type":"Feature","properties":{"ZIP":"20010"},"geometry":{"type":"Polygon","coordinates":[[[-77.0360,38.9480],[-77.0100,38.9480],[-77.0100,38.9300],[-77.0360,38.9300],[-77.0360,38.9480]]]}},
+        {"type":"Feature","properties":{"ZIP":"20011"},"geometry":{"type":"Polygon","coordinates":[[[-77.0200,38.9720],[-76.9900,38.9720],[-76.9900,38.9480],[-77.0200,38.9480],[-77.0200,38.9720]]]}},
+        {"type":"Feature","properties":{"ZIP":"20012"},"geometry":{"type":"Polygon","coordinates":[[[-77.0360,38.9900],[-77.0100,38.9900],[-77.0100,38.9720],[-77.0360,38.9720],[-77.0360,38.9900]]]}},
+        {"type":"Feature","properties":{"ZIP":"20015"},"geometry":{"type":"Polygon","coordinates":[[[-77.0780,38.9900],[-77.0360,38.9900],[-77.0360,38.9600],[-77.0780,38.9600],[-77.0780,38.9900]]]}},
+        {"type":"Feature","properties":{"ZIP":"20016"},"geometry":{"type":"Polygon","coordinates":[[[-77.1180,38.9600],[-77.0780,38.9600],[-77.0780,38.9240],[-77.0900,38.9220],[-77.1180,38.9300],[-77.1180,38.9600]]]}},
+        {"type":"Feature","properties":{"ZIP":"20017"},"geometry":{"type":"Polygon","coordinates":[[[-76.9900,38.9900],[-76.9600,38.9900],[-76.9600,38.9600],[-76.9900,38.9600],[-76.9900,38.9900]]]}},
+        {"type":"Feature","properties":{"ZIP":"20018"},"geometry":{"type":"Polygon","coordinates":[[[-76.9700,38.9600],[-76.9400,38.9600],[-76.9400,38.9300],[-76.9700,38.9300],[-76.9700,38.9600]]]}},
+        {"type":"Feature","properties":{"ZIP":"20019"},"geometry":{"type":"Polygon","coordinates":[[[-76.9400,38.9120],[-76.9000,38.9120],[-76.9000,38.8800],[-76.9400,38.8800],[-76.9400,38.9120]]]}},
+        {"type":"Feature","properties":{"ZIP":"20020"},"geometry":{"type":"Polygon","coordinates":[[[-76.9750,38.8620],[-76.9400,38.8620],[-76.9400,38.8380],[-76.9750,38.8380],[-76.9750,38.8620]]]}},
+        {"type":"Feature","properties":{"ZIP":"20024"},"geometry":{"type":"Polygon","coordinates":[[[-77.0280,38.8860],[-77.0030,38.8860],[-77.0030,38.8620],[-77.0280,38.8620],[-77.0280,38.8860]]]}},
+        {"type":"Feature","properties":{"ZIP":"20032"},"geometry":{"type":"Polygon","coordinates":[[[-77.0280,38.8380],[-76.9750,38.8380],[-76.9750,38.8000],[-77.0280,38.8000],[-77.0280,38.8380]]]}},
+        {"type":"Feature","properties":{"ZIP":"20036"},"geometry":{"type":"Polygon","coordinates":[[[-77.0500,38.9117],[-77.0360,38.9117],[-77.0360,38.9003],[-77.0500,38.9003],[-77.0500,38.9117]]]}},
+        {"type":"Feature","properties":{"ZIP":"20037"},"geometry":{"type":"Polygon","coordinates":[[[-77.0650,38.9003],[-77.0500,38.9003],[-77.0500,38.8880],[-77.0650,38.8880],[-77.0650,38.9003]]]}}
+      ]});
     });
-}
-
-// Embedded fallback with hand-traced accurate DC ZIP boundaries
-function renderZipChoroplethEmbedded(avgs,minP,maxP,DC_ZIPS){
-  if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
-  const DC_ZIP_ACCURATE={
-    "20001":[[38.9117,-77.0229],[38.9117,-77.0088],[38.9003,-77.0088],[38.8963,-77.0088],[38.8963,-77.0229],[38.9117,-77.0229]],
-    "20002":[[38.9117,-76.9973],[38.9117,-76.9745],[38.8860,-76.9745],[38.8860,-76.9973],[38.9117,-76.9973]],
-    "20003":[[38.8860,-77.0030],[38.8860,-76.9745],[38.8620,-76.9745],[38.8620,-77.0030],[38.8860,-77.0030]],
-    "20004":[[38.9003,-77.0280],[38.9003,-77.0088],[38.8910,-77.0088],[38.8910,-77.0280],[38.9003,-77.0280]],
-    "20005":[[38.9117,-77.0360],[38.9117,-77.0229],[38.9003,-77.0229],[38.9003,-77.0360],[38.9117,-77.0360]],
-    "20006":[[38.9003,-77.0500],[38.9003,-77.0360],[38.8880,-77.0360],[38.8880,-77.0500],[38.9003,-77.0500]],
-    "20007":[[38.9220,-77.0900],[38.9220,-77.0550],[38.9003,-77.0550],[38.9003,-77.0900],[38.9220,-77.0900]],
-    "20008":[[38.9480,-77.0900],[38.9480,-77.0550],[38.9220,-77.0550],[38.9220,-77.0900],[38.9480,-77.0900]],
-    "20009":[[38.9300,-77.0550],[38.9300,-77.0220],[38.9117,-77.0220],[38.9117,-77.0550],[38.9300,-77.0550]],
-    "20010":[[38.9480,-77.0360],[38.9480,-77.0100],[38.9300,-77.0100],[38.9300,-77.0360],[38.9480,-77.0360]],
-    "20011":[[38.9720,-77.0200],[38.9720,-76.9900],[38.9480,-76.9900],[38.9480,-77.0200],[38.9720,-77.0200]],
-    "20012":[[38.9900,-77.0360],[38.9900,-77.0100],[38.9720,-77.0100],[38.9720,-77.0360],[38.9900,-77.0360]],
-    "20015":[[38.9900,-77.0780],[38.9900,-77.0360],[38.9600,-77.0360],[38.9600,-77.0780],[38.9900,-77.0780]],
-    "20016":[[38.9600,-77.1180],[38.9600,-77.0780],[38.9240,-77.0780],[38.9240,-77.1180],[38.9600,-77.1180]],
-    "20017":[[38.9900,-76.9900],[38.9900,-76.9600],[38.9600,-76.9600],[38.9600,-76.9900],[38.9900,-76.9900]],
-    "20018":[[38.9600,-76.9700],[38.9600,-76.9400],[38.9300,-76.9400],[38.9300,-76.9700],[38.9600,-76.9700]],
-    "20019":[[38.9120,-76.9400],[38.9120,-76.9000],[38.8800,-76.9000],[38.8800,-76.9400],[38.9120,-76.9400]],
-    "20020":[[38.8620,-76.9750],[38.8620,-76.9400],[38.8380,-76.9400],[38.8380,-76.9750],[38.8620,-76.9750]],
-    "20024":[[38.8860,-77.0280],[38.8860,-77.0030],[38.8620,-77.0030],[38.8620,-77.0280],[38.8860,-77.0280]],
-    "20032":[[38.8380,-77.0280],[38.8380,-76.9750],[38.8000,-76.9750],[38.8000,-77.0280],[38.8380,-77.0280]],
-    "20036":[[38.9117,-77.0500],[38.9117,-77.0360],[38.9003,-77.0360],[38.9003,-77.0500],[38.9117,-77.0500]],
-    "20037":[[38.9003,-77.0650],[38.9003,-77.0500],[38.8880,-77.0500],[38.8880,-77.0650],[38.9003,-77.0650]],
-  };
-  const layers=[];
-  Object.entries(DC_ZIP_ACCURATE).forEach(([zip,coords])=>{
-    if(!avgs[zip]) return;
-    const t=(avgs[zip]-minP)/(maxP-minP||1);
-    const poly=L.polygon(coords,{
-      color:'rgba(255,255,255,0.4)',weight:1.5,
-      fillColor:heatColor(t,0.5),fillOpacity:0.55
-    }).bindTooltip('ZIP '+zip+'<br>Avg: $'+Math.round(avgs[zip]/1000)+'K',
-      {permanent:false,className:'zip-tip',sticky:true});
-    layers.push(poly);
-  });
-  zipLayer=L.layerGroup(layers).addTo(map);
 }
 
 // ── RADIUS HEAT (circle blobs by ZIP centroid) ──
