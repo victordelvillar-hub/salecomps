@@ -1243,9 +1243,6 @@ body {
         <div class="det-sub" id="det-sub"></div>
         <div class="det-status-label" id="det-status-lbl"></div>
         <div class="det-price" id="det-price"></div>
-        <div class="det-cma-bar">
-          <button class="det-start-cma-btn" id="start-cma-btn" onclick="startCmaMode()">📋 Start CMA</button>
-        </div>
       </div>
       <div class="det-body" id="det-body"></div>
     </div>
@@ -1470,18 +1467,19 @@ function safeShowDetail(id){
 
 // ── DETAIL ──
 function showDetail(p){
-  // If replace mode is active, intercept the click
+  // Replace mode: intercept for slot replacement
   if(_replaceState){ handleReplacePickFromMap(p); return; }
 
-  // In CMA mode, never change the subject — just pan the map and ignore
-  if(_cmaMode) {
-    if(p.lat&&p.lng) map.panTo([p.lat,p.lng]);
-    return;
-  }
-
+  // Set new subject — pre-fill comp slots from nearby comps
+  _cmaSubject=p;
   selectedId=p.id;
 
-  // Update selected card
+  const tiers=findCompsByTier(p, _compRadius);
+  _cmaSlots.sold    = padSlots(tiers.sold,    3);
+  _cmaSlots.contract= padSlots(tiers.contract, 3);
+  _cmaSlots.active  = padSlots(tiers.active,   3);
+
+  // Update selected card in list
   document.querySelectorAll('.prop-card').forEach(c=>c.classList.remove('selected'));
   const card=document.getElementById('card-'+p.id);
   if(card){card.classList.add('selected'); card.scrollIntoView({block:'nearest'});}
@@ -1495,13 +1493,6 @@ function showDetail(p){
   document.getElementById('det-sub').textContent='Washington, DC '+(p.z||'')+(p.sub?' · '+p.sub:'');
   document.getElementById('det-status-lbl').textContent=statusLabel(p.s);
   document.getElementById('det-price').textContent=fmt(p.sp||p.p);
-
-  // Track subject for CMA (only when NOT in CMA mode)
-  _cmaSubject=p;
-
-  // Start CMA button state
-  const cmaBtn=document.getElementById('start-cma-btn');
-  if(cmaBtn){ cmaBtn.classList.remove('cma-active'); cmaBtn.textContent='📋 Start CMA'; }
 
   renderDetailBody(p);
   document.getElementById('detail-panel').classList.add('open');
@@ -1517,14 +1508,10 @@ function setCompRadius(r, pid){
   _compRadius=r;
   const p=D.find(x=>x.id==pid||x.id==+pid);
   if(!p) return;
-  // In CMA mode, refresh slots from new radius
-  if(_cmaMode){
-    const tiers=findCompsByTier(p, r);
-    _cmaSlots.sold    = padSlots(tiers.sold,    3);
-    _cmaSlots.contract= padSlots(tiers.contract, 3);
-    _cmaSlots.active  = padSlots(tiers.active,   3);
-    updateCmaBadge();
-  }
+  const tiers=findCompsByTier(p, r);
+  _cmaSlots.sold    = padSlots(tiers.sold,    3);
+  _cmaSlots.contract= padSlots(tiers.contract, 3);
+  _cmaSlots.active  = padSlots(tiers.active,   3);
   renderDetailBody(p);
 }
 
@@ -1928,7 +1915,7 @@ function activateReplaceMode(tier, idx){
 function cancelReplaceMode(){
   _replaceState=null;
   document.getElementById('replace-hint').style.display='none';
-  if(_cmaMode) renderCmaSlots();
+  renderCmaSlots();
 }
 
 // Called from map pin click when replace mode is active
@@ -2046,54 +2033,9 @@ function updateCmaSummaryStats(){
   rngEl.textContent='$'+Math.round(Math.min(...all)/1000)+'K – $'+Math.round(Math.max(...all)/1000)+'K';
 }
 
-// ── Render the full det-body (normal view or CMA mode) ──
+// ── Render detail body — always shows comp editor ──
 function renderDetailBody(p){
-  const tiers=findCompsByTier(p, _compRadius);
-  if(_cmaMode){
-    document.getElementById('det-body').innerHTML=`
-      <div class="cma-mode-banner">
-        <span class="cma-mode-label">📋 CMA Mode</span>
-        <button class="cma-back-btn" onclick="exitCmaMode()">← Back to Details</button>
-      </div>
-
-      <div class="det-section">
-        <div class="det-section-title">Property Details</div>
-        <div class="det-grid">
-          <div class="det-field"><div class="lbl">Bedrooms</div><div class="val">${p.b||'—'}</div></div>
-          <div class="det-field"><div class="lbl">Bathrooms</div><div class="val">${p.ba||'—'}</div></div>
-          <div class="det-field"><div class="lbl">Sq Footage</div><div class="val">${p.sf?p.sf.toLocaleString():'—'}</div></div>
-          <div class="det-field"><div class="lbl">Status</div><div class="val">${statusLabel(p.s)}</div></div>
-          <div class="det-field"><div class="lbl">List Price</div><div class="val">${fmt(p.op)}</div></div>
-          <div class="det-field"><div class="lbl">Sold Price</div><div class="val">${fmt(p.sp)}</div></div>
-          <div class="det-field"><div class="lbl">Days on Market</div><div class="val">${p.dom||'—'}</div></div>
-          <div class="det-field"><div class="lbl">Year Built</div><div class="val">${p.yr||'—'}</div></div>
-        </div>
-      </div>
-
-      <div class="det-section">
-        <div class="det-section-title">Comps — Radius
-          <span style="float:right;display:flex;gap:4px">
-            ${[0.25,0.5,1].map(r=>`<button class="comp-radius-btn${_compRadius===r?' active':''}" onclick="setCompRadius(${r},'${p.id}')" style="padding:3px 8px;font-size:10px">${r} mi</button>`).join('')}
-          </span>
-        </div>
-        <div id="cma-slots-wrap">${buildCmaSlotsHTML()}</div>
-      </div>
-
-      <div class="cma-summary-block">
-        <div class="cma-summary-stats">
-          <div class="cma-sum-stat"><div class="val" id="cma-sum-count">0</div><div class="lbl">Comps</div></div>
-          <div class="cma-sum-stat"><div class="val" id="cma-sum-avg">—</div><div class="lbl">Avg Price</div></div>
-          <div class="cma-sum-stat"><div class="val" id="cma-sum-range">—</div><div class="lbl">Range</div></div>
-        </div>
-        <div class="cma-action-btns">
-          <button class="cma-act-btn cma-act-copy" onclick="copyCompsList()">📋 Copy Comps</button>
-          <button class="cma-act-btn cma-act-generate">✨ Full CMA</button>
-        </div>
-      </div>`;
-    updateCmaSummaryStats();
-  } else {
-    // Normal detail view (unchanged)
-    document.getElementById('det-body').innerHTML=`
+  document.getElementById('det-body').innerHTML=`
     <div class="det-section">
       <div class="det-section-title">Property Details</div>
       <div class="det-grid">
@@ -2101,10 +2043,10 @@ function renderDetailBody(p){
         <div class="det-field"><div class="lbl">Bathrooms</div><div class="val">${p.ba||'—'}</div></div>
         <div class="det-field"><div class="lbl">Sq Footage</div><div class="val">${p.sf?p.sf.toLocaleString():'—'}</div></div>
         <div class="det-field"><div class="lbl">Status</div><div class="val">${statusLabel(p.s)}</div></div>
-        <div class="det-field"><div class="lbl">Days on Market</div><div class="val">${p.dom||'—'}</div></div>
-        <div class="det-field"><div class="lbl">Year Built</div><div class="val">${p.yr||'—'}</div></div>
         <div class="det-field"><div class="lbl">List Price</div><div class="val">${fmt(p.op)}</div></div>
         <div class="det-field"><div class="lbl">Sold Price</div><div class="val">${fmt(p.sp)}</div></div>
+        <div class="det-field"><div class="lbl">Days on Market</div><div class="val">${p.dom||'—'}</div></div>
+        <div class="det-field"><div class="lbl">Year Built</div><div class="val">${p.yr||'—'}</div></div>
         ${p.hoa?`<div class="det-field"><div class="lbl">HOA/Month</div><div class="val">${fmt(p.hoa)}</div></div>`:''}
         <div class="det-field"><div class="lbl">Settled Date</div><div class="val">${p.sd||'—'}</div></div>
         <div class="det-field"><div class="lbl">MLS #</div><div class="val" style="font-size:11px">${p.n||'—'}</div></div>
@@ -2123,17 +2065,26 @@ function renderDetailBody(p){
     </div>`:''}
 
     <div class="det-section">
-      <div class="det-section-title">Nearby Comps</div>
-      <div class="comp-radius-toggle">
-        <button class="comp-radius-btn ${_compRadius===0.25?'active':''}" onclick="setCompRadius(0.25,'${p.id}')">0.25 mi</button>
-        <button class="comp-radius-btn ${_compRadius===0.5?'active':''}" onclick="setCompRadius(0.5,'${p.id}')">0.5 mi</button>
-        <button class="comp-radius-btn ${_compRadius===1?'active':''}" onclick="setCompRadius(1,'${p.id}')">1 mi</button>
+      <div class="det-section-title">Nearby Comps
+        <span style="float:right;display:flex;gap:4px">
+          ${[0.25,0.5,1].map(r=>`<button class="comp-radius-btn${_compRadius===r?' active':''}" onclick="setCompRadius(${r},'${p.id}')" style="padding:3px 8px;font-size:10px">${r} mi</button>`).join('')}
+        </span>
       </div>
-      ${renderCompTier(tiers.sold,'sold','● Sold — Baseline')}
-      ${renderCompTier(tiers.contract,'contract','◆ Market Pulse — Under Contract')}
-      ${renderCompTier(tiers.active,'active','▲ Current Competition — Active')}
+      <div id="cma-slots-wrap">${buildCmaSlotsHTML()}</div>
+    </div>
+
+    <div class="cma-summary-block">
+      <div class="cma-summary-stats">
+        <div class="cma-sum-stat"><div class="val" id="cma-sum-count">0</div><div class="lbl">Comps</div></div>
+        <div class="cma-sum-stat"><div class="val" id="cma-sum-avg">—</div><div class="lbl">Avg Price</div></div>
+        <div class="cma-sum-stat"><div class="val" id="cma-sum-range">—</div><div class="lbl">Range</div></div>
+      </div>
+      <div class="cma-action-btns">
+        <button class="cma-act-btn cma-act-copy" onclick="copyCompsList()">📋 Copy Comps</button>
+        <button class="cma-act-btn cma-act-generate">✨ Full CMA</button>
+      </div>
     </div>`;
-  }
+  updateCmaSummaryStats();
 }
 
 // ── Copy comps to clipboard ──
