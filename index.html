@@ -891,11 +891,13 @@ function tryLogin(){
   if(pw==='agentedge2025'){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='flex';
-    initMap();
-    fetch('salecomps-data.json')
-      .then(r=>r.json())
-      .then(data=>{D=data;_dataLoaded=true;applyFilters();})
-      .catch(e=>console.error('Data load failed:',e));
+    requestAnimationFrame(()=>{
+      initMap();
+      fetch('salecomps-data.json')
+        .then(r=>r.json())
+        .then(data=>{D=data;_dataLoaded=true;map.invalidateSize();applyFilters();})
+        .catch(e=>console.error('Data load failed:',e));
+    });
   } else {
     document.getElementById('login-err').textContent='Incorrect password';
     document.getElementById('pw-input').value='';
