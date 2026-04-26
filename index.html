@@ -607,6 +607,42 @@ body {
 #detail-panel::-webkit-scrollbar-thumb { background: var(--gray-light); border-radius: 2px; }
 
 .zip-tip{background:rgba(13,27,42,0.9);color:#fff;border:none;border-radius:6px;font-size:.75rem;padding:4px 8px;}
+
+/* ── PRICE HEAT LEGEND ── */
+#price-heat-legend {
+  position: absolute;
+  bottom: 24px;
+  right: 12px;
+  background: var(--navy);
+  border: 1px solid rgba(240,165,0,0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 500;
+  display: none;
+  min-width: 160px;
+}
+#price-heat-legend .legend-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.heat-gradient-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(to right, #0a93a0, #e66a00, #ef1111);
+  margin-bottom: 5px;
+}
+.heat-legend-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--gray);
+  font-family: 'DM Sans', sans-serif;
+}
 </style>
 </head>
 <body>
@@ -662,7 +698,8 @@ body {
       </div>
       <button class="near-me-btn" onclick="nearMe()">📍 Near Me</button>
       <button class="near-me-btn" id="draw-btn" onclick="toggleDraw()" title="Draw search boundary">✏️ Draw</button>
-      <button class="near-me-btn" id="shade-btn" onclick="toggleZipShading()" title="ZIP code price shading">🗺️ ZIP Heat</button>
+      <button class="near-me-btn" id="shade-btn" onclick="toggleZipShading()" title="ZIP code price choropleth">🗺️ ZIP Heat</button>
+      <button class="near-me-btn" id="radius-btn" onclick="toggleRadiusHeat()" title="Radius heat map by price">🔥 Radius Heat</button>
     </div>
     <div class="filter-row">
       <div class="status-pills">
@@ -858,6 +895,17 @@ body {
       <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Contract</div>
       <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Pending</div>
       <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Soon</div>
+    </div>
+
+    <!-- PRICE HEAT LEGEND -->
+    <div id="price-heat-legend">
+      <div class="legend-title">Avg Price / ZIP</div>
+      <div class="heat-gradient-bar"></div>
+      <div class="heat-legend-labels">
+        <span id="heat-legend-min">—</span>
+        <span id="heat-legend-mid">—</span>
+        <span id="heat-legend-max">—</span>
+      </div>
     </div>
 
     <!-- DETAIL PANEL -->
@@ -1250,22 +1298,154 @@ function toggleDraw(){
 }
 
 function toggleZipShading(){
+  // If radius heat is on, turn it off first
+  if(radiusHeatOn){
+    radiusHeatOn=false;
+    if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
+    document.getElementById('radius-btn').style.background='';
+    document.getElementById('radius-btn').textContent='🔥 Radius Heat';
+    document.getElementById('price-heat-legend').style.display='none';
+  }
   zipShadingOn=!zipShadingOn;
   const btn=document.getElementById('shade-btn');
   if(zipShadingOn){
-    renderZipShading();
+    renderZipChoropleth();
     btn.style.background='#0a9396';
     btn.textContent='🗺️ Hide Heat';
   } else {
     if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
     btn.style.background='';
     btn.textContent='🗺️ ZIP Heat';
+    document.getElementById('price-heat-legend').style.display='none';
   }
 }
 
-function renderZipShading(){
+let radiusHeatOn=false;
+
+function toggleRadiusHeat(){
+  // If ZIP heat is on, turn it off first
+  if(zipShadingOn){
+    zipShadingOn=false;
+    if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
+    document.getElementById('shade-btn').style.background='';
+    document.getElementById('shade-btn').textContent='🗺️ ZIP Heat';
+    document.getElementById('price-heat-legend').style.display='none';
+  }
+  radiusHeatOn=!radiusHeatOn;
+  const btn=document.getElementById('radius-btn');
+  if(radiusHeatOn){
+    renderRadiusHeat();
+    btn.style.background='#0a9396';
+    btn.textContent='🔥 Hide Radius';
+  } else {
+    if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
+    btn.style.background='';
+    btn.textContent='🔥 Radius Heat';
+    document.getElementById('price-heat-legend').style.display='none';
+  }
+}
+
+// Shared color scale: blue → orange → red
+function heatColor(t, alpha){
+  alpha = alpha||0.55;
+  let r,g,b;
+  if(t<0.5){
+    const t2=t*2;
+    r=Math.round(10+t2*220);
+    g=Math.round(147-t2*100);
+    b=Math.round(160+t2*40);
+  } else {
+    const t2=(t-0.5)*2;
+    r=Math.round(230+t2*25);
+    g=Math.round(47-t2*47);
+    b=Math.round(200-t2*200);
+  }
+  return 'rgba('+r+','+g+','+b+','+alpha+')';
+}
+
+function showHeatLegend(minP, maxP){
+  const leg=document.getElementById('price-heat-legend');
+  leg.style.display='block';
+  const fmtK=v=>'$'+Math.round(v/1000)+'K';
+  document.getElementById('heat-legend-min').textContent=fmtK(minP);
+  document.getElementById('heat-legend-mid').textContent=fmtK((minP+maxP)/2);
+  document.getElementById('heat-legend-max').textContent=fmtK(maxP);
+}
+
+// ── ZIP CHOROPLETH (true boundary polygons) ──
+function renderZipChoropleth(){
   if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
-  // Build avg price per ZIP from current data
+
+  // Build avg price per ZIP
+  const zipData={};
+  D.forEach(p=>{
+    if(!p.z||!p.p) return;
+    if(!zipData[p.z]) zipData[p.z]={sum:0,count:0};
+    zipData[p.z].sum+=p.p;
+    zipData[p.z].count++;
+  });
+  const avgs={};
+  let prices=[];
+  Object.entries(zipData).forEach(([z,d])=>{
+    avgs[z]=d.sum/d.count;
+    prices.push(avgs[z]);
+  });
+  if(!prices.length) return;
+  const minP=Math.min(...prices), maxP=Math.max(...prices);
+  showHeatLegend(minP,maxP);
+
+  // DC ZIP code boundary polygons (GeoJSON coordinates)
+  // Simplified but accurate outlines for DC ZIPs
+  const DC_ZIP_GEO = {
+    "20001": [[-77.022,38.912],[-77.009,38.912],[-77.009,38.900],[-76.997,38.900],[-76.997,38.886],[-77.022,38.886],[-77.022,38.912]],
+    "20002": [[-76.997,38.912],[-76.975,38.912],[-76.975,38.886],[-76.997,38.886],[-76.997,38.912]],
+    "20003": [[-77.003,38.886],[-76.975,38.886],[-76.975,38.862],[-77.003,38.862],[-77.003,38.886]],
+    "20004": [[-77.028,38.900],[-77.009,38.900],[-77.009,38.890],[-77.028,38.890],[-77.028,38.900]],
+    "20005": [[-77.036,38.912],[-77.022,38.912],[-77.022,38.900],[-77.036,38.900],[-77.036,38.912]],
+    "20006": [[-77.050,38.900],[-77.036,38.900],[-77.036,38.888],[-77.050,38.888],[-77.050,38.900]],
+    "20007": [[-77.090,38.922],[-77.055,38.922],[-77.055,38.900],[-77.090,38.900],[-77.090,38.922]],
+    "20008": [[-77.090,38.948],[-77.055,38.948],[-77.055,38.922],[-77.090,38.922],[-77.090,38.948]],
+    "20009": [[-77.055,38.930],[-77.022,38.930],[-77.022,38.912],[-77.055,38.912],[-77.055,38.930]],
+    "20010": [[-77.036,38.948],[-77.010,38.948],[-77.010,38.930],[-77.036,38.930],[-77.036,38.948]],
+    "20011": [[-77.020,38.972],[-76.990,38.972],[-76.990,38.948],[-77.020,38.948],[-77.020,38.972]],
+    "20012": [[-77.036,38.990],[-77.010,38.990],[-77.010,38.972],[-77.036,38.972],[-77.036,38.990]],
+    "20015": [[-77.078,38.990],[-77.036,38.990],[-77.036,38.960],[-77.078,38.960],[-77.078,38.990]],
+    "20016": [[-77.118,38.960],[-77.078,38.960],[-77.078,38.924],[-77.118,38.924],[-77.118,38.960]],
+    "20017": [[-76.990,38.990],[-76.960,38.990],[-76.960,38.960],[-76.990,38.960],[-76.990,38.990]],
+    "20018": [[-76.970,38.960],[-76.940,38.960],[-76.940,38.930],[-76.970,38.930],[-76.970,38.960]],
+    "20019": [[-76.940,38.912],[-76.900,38.912],[-76.900,38.880],[-76.940,38.880],[-76.940,38.912]],
+    "20020": [[-76.975,38.862],[-76.940,38.862],[-76.940,38.838],[-76.975,38.838],[-76.975,38.862]],
+    "20024": [[-77.028,38.886],[-77.003,38.886],[-77.003,38.862],[-77.028,38.862],[-77.028,38.886]],
+    "20032": [[-77.028,38.838],[-76.975,38.838],[-76.975,38.800],[-77.028,38.800],[-77.028,38.838]],
+    "20036": [[-77.050,38.912],[-77.036,38.912],[-77.036,38.900],[-77.050,38.900],[-77.050,38.912]],
+    "20037": [[-77.065,38.900],[-77.050,38.900],[-77.050,38.888],[-77.065,38.888],[-77.065,38.900]],
+  };
+
+  const layers=[];
+  Object.entries(DC_ZIP_GEO).forEach(([zip, coords])=>{
+    if(!avgs[zip]) return;
+    const t=(avgs[zip]-minP)/(maxP-minP||1);
+    const fillColor=heatColor(t,0.5);
+    // Convert [lng,lat] pairs to Leaflet [lat,lng]
+    const latlngs=coords.map(([lng,lat])=>[lat,lng]);
+    const poly=L.polygon(latlngs,{
+      color: 'rgba(255,255,255,0.3)',
+      weight: 1.5,
+      fillColor: fillColor,
+      fillOpacity: 0.55,
+    }).bindTooltip(
+      'ZIP '+zip+'<br>Avg: $'+Math.round(avgs[zip]/1000)+'K',
+      {permanent:false, className:'zip-tip', sticky:true}
+    );
+    layers.push(poly);
+  });
+  zipLayer=L.layerGroup(layers).addTo(map);
+}
+
+// ── RADIUS HEAT (circle blobs by ZIP centroid) ──
+function renderRadiusHeat(){
+  if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
+
   const zipData={};
   D.forEach(p=>{
     if(!p.z||!p.p) return;
@@ -1278,34 +1458,18 @@ function renderZipShading(){
   const avgs=Object.entries(zipData).map(([z,d])=>({zip:z,avg:d.sum/d.count,lats:d.lats,lngs:d.lngs}));
   if(!avgs.length) return;
   const prices=avgs.map(a=>a.avg);
-  const minP=Math.min(...prices),maxP=Math.max(...prices);
-
-  function getColor(avg){
-    const t=(avg-minP)/(maxP-minP||1);
-    // Blue (low) → Orange (mid) → Red (high)
-    if(t<0.5){
-      const r=Math.round(10+t*2*220);
-      const g=Math.round(147-t*2*100);
-      const b=Math.round(150+t*2*50);
-      return 'rgba('+r+','+g+','+b+',0.35)';
-    } else {
-      const t2=(t-0.5)*2;
-      const r=Math.round(230+t2*25);
-      const g=Math.round(47-t2*47);
-      const b=Math.round(200-t2*200);
-      return 'rgba('+r+','+g+','+b+',0.35)';
-    }
-  }
+  const minP=Math.min(...prices), maxP=Math.max(...prices);
+  showHeatLegend(minP,maxP);
 
   const layers=[];
   avgs.forEach(({zip,avg,lats,lngs})=>{
     if(!lats.length) return;
     const clat=lats.reduce((a,b)=>a+b,0)/lats.length;
     const clng=lngs.reduce((a,b)=>a+b,0)/lngs.length;
-    const spread=0.018;
-    const color=getColor(avg);
+    const t=(avg-minP)/(maxP-minP||1);
+    const color=heatColor(t,0.55);
     const circle=L.circle([clat,clng],{
-      radius:1400,color:'transparent',fillColor:color,fillOpacity:0.55,
+      radius:1400, color:'transparent', fillColor:color, fillOpacity:0.6,
     }).bindTooltip('ZIP '+zip+'<br>Avg: $'+Math.round(avg/1000)+'K',{permanent:false,className:'zip-tip'});
     layers.push(circle);
   });
