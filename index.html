@@ -513,6 +513,39 @@ body {
 }
 
 /* ── COMPS ── */
+.comp-tier-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 6px;
+}
+.comp-tier-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-family: 'Syne', sans-serif;
+  white-space: nowrap;
+}
+.comp-tier-label.sold { color: var(--red); }
+.comp-tier-label.contract { color: var(--amber); }
+.comp-tier-label.active { color: var(--green); }
+.comp-tier-line { flex: 1; height: 1px; background: var(--gray-light); }
+.comp-radius-toggle { display: flex; gap: 4px; margin-bottom: 12px; }
+.comp-radius-btn {
+  flex: 1;
+  padding: 5px 0;
+  background: var(--gray-light);
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray);
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.comp-radius-btn.active { background: var(--navy); color: var(--gold); }
 .comp-item {
   display: flex;
   justify-content: space-between;
@@ -525,9 +558,12 @@ body {
   transition: background 0.15s;
 }
 .comp-item:hover { background: var(--gray-light); }
+.comp-item.contract-item { border-left: 3px solid var(--amber); }
+.comp-item.active-item { border-left: 3px solid var(--green); }
 .comp-addr { font-size: 13px; font-weight: 600; color: var(--text); font-family: 'Syne', sans-serif; }
 .comp-meta { font-size: 11px; color: var(--gray); margin-top: 2px; }
 .comp-price { font-size: 14px; font-weight: 700; color: var(--navy); font-family: 'Syne', sans-serif; white-space: nowrap; margin-left: 12px; }
+.comp-empty { color: var(--gray); font-size: 12px; font-style: italic; padding: 4px 0 8px; }
 
 /* ── AGENT CARD ── */
 .agent-card {
@@ -1151,7 +1187,7 @@ function showDetail(p){
   document.getElementById('det-price').textContent=fmt(p.sp||p.p);
 
   // Body
-  const comps=findComps(p);
+  const tiers=findCompsByTier(p, _compRadius);
   document.getElementById('det-body').innerHTML=`
     <div class="det-section">
       <div class="det-section-title">Property Details</div>
@@ -1183,15 +1219,14 @@ function showDetail(p){
 
     <div class="det-section">
       <div class="det-section-title">Nearby Comps</div>
-      ${comps.length?comps.map(c=>`
-        <div class="comp-item" onclick="showDetail(D.find(x=>x.id===${c.id}))">
-          <div>
-            <div class="comp-addr">${c.a}</div>
-            <div class="comp-meta">${c.z} · ${statusLabel(c.s)} · ${c.dist} mi away</div>
-          </div>
-          <div class="comp-price">${fmt(c.sp||c.p)}</div>
-        </div>
-      `).join(''):'<div style="color:var(--gray);font-size:13px">No nearby comps found</div>'}
+      <div class="comp-radius-toggle">
+        <button class="comp-radius-btn ${_compRadius===0.25?'active':''}" onclick="setCompRadius(0.25,'${p.id}')">0.25 mi</button>
+        <button class="comp-radius-btn ${_compRadius===0.5?'active':''}" onclick="setCompRadius(0.5,'${p.id}')">0.5 mi</button>
+        <button class="comp-radius-btn ${_compRadius===1?'active':''}" onclick="setCompRadius(1,'${p.id}')">1 mi</button>
+      </div>
+      ${renderCompTier(tiers.sold,'sold','● Sold — Baseline')}
+      ${renderCompTier(tiers.contract,'contract','◆ Market Pulse — Under Contract')}
+      ${renderCompTier(tiers.active,'active','▲ Current Competition — Active')}
     </div>
   `;
 
@@ -1204,7 +1239,14 @@ function closeDetail(){
   document.querySelectorAll('.prop-card').forEach(c=>c.classList.remove('selected'));
 }
 
-// ── COMPS ──
+function setCompRadius(r, pid){
+  _compRadius=r;
+  // Re-render the currently open detail panel with new radius
+  const p=D.find(x=>x.id==pid||x.id==+pid);
+  if(p) showDetail(p);
+}
+
+// ── COMPS — 3-tier: Sold / Market Pulse (Under Contract) / Current Competition (Active) ──
 function haversine(lat1,lng1,lat2,lng2){
   const R=3959;
   const dLat=(lat2-lat1)*Math.PI/180;
@@ -1213,45 +1255,80 @@ function haversine(lat1,lng1,lat2,lng2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-function findComps(p){
-  if(!p.lat||!p.lng) return [];
+let _compRadius=0.5; // default radius in miles
+
+function findCompsByTier(p, radiusMi){
+  if(!p.lat||!p.lng) return {sold:[],contract:[],active:[]};
   const subjectAddr=p.a.split('#')[0].trim().toLowerCase();
-  const seenUnit=new Set();
+  const r=radiusMi||_compRadius;
 
-  // Build pool: same beds, Closed, has geo, different building, within 0.5mi
-  let pool=D
-    .filter(c=>{
-      if(c.id===p.id) return false;
-      if(!c.lat||!c.lng||c.b!==p.b||c.s!=='Closed') return false;
-      if(c.a.split('#')[0].trim().toLowerCase()===subjectAddr) return false; // exclude same building
-      const key=c.a.trim().toLowerCase()+'|'+(c.u||'');
-      if(seenUnit.has(key)) return false; // deduplicate
-      seenUnit.add(key);
-      return true;
-    })
-    .map(c=>Object.assign({},c,{distNum:haversine(p.lat,p.lng,c.lat,c.lng),dist:haversine(p.lat,p.lng,c.lat,c.lng).toFixed(2)}))
-    .filter(c=>c.distNum<=0.5) // cap at 0.5mi
-    .sort((a,b)=>a.distNum-b.distNum);
-
-  // Fallback: widen to 1.5mi if fewer than 3 results
-  if(pool.length<3){
-    const seen2=new Set();
-    pool=D
+  function buildPool(statusFilter){
+    const seen=new Set();
+    let pool=D
       .filter(c=>{
         if(c.id===p.id) return false;
-        if(!c.lat||!c.lng||c.b!==p.b||c.s!=='Closed') return false;
+        if(!c.lat||!c.lng) return false;
+        if(c.b!==p.b) return false; // same beds
+        if(!statusFilter(c.s)) return false;
         if(c.a.split('#')[0].trim().toLowerCase()===subjectAddr) return false;
         const key=c.a.trim().toLowerCase()+'|'+(c.u||'');
-        if(seen2.has(key)) return false;
-        seen2.add(key);
+        if(seen.has(key)) return false;
+        seen.add(key);
         return true;
       })
-      .map(c=>Object.assign({},c,{distNum:haversine(p.lat,p.lng,c.lat,c.lng),dist:haversine(p.lat,p.lng,c.lat,c.lng).toFixed(2)}))
-      .filter(c=>c.distNum<=1.5)
-      .sort((a,b)=>a.distNum-b.distNum);
+      .map(c=>Object.assign({},c,{distNum:haversine(p.lat,p.lng,c.lat,c.lng)}))
+      .filter(c=>c.distNum<=r)
+      .sort((a,b)=>a.distNum-b.distNum)
+      .slice(0,3);
+
+    // Fallback: widen to 1.5mi if 0 results at chosen radius
+    if(!pool.length && r < 1.5){
+      const seen2=new Set();
+      pool=D
+        .filter(c=>{
+          if(c.id===p.id||!c.lat||!c.lng) return false;
+          if(c.b!==p.b||!statusFilter(c.s)) return false;
+          if(c.a.split('#')[0].trim().toLowerCase()===subjectAddr) return false;
+          const key=c.a.trim().toLowerCase()+'|'+(c.u||'');
+          if(seen2.has(key)) return false;
+          seen2.add(key);
+          return true;
+        })
+        .map(c=>Object.assign({},c,{distNum:haversine(p.lat,p.lng,c.lat,c.lng)}))
+        .filter(c=>c.distNum<=1.5)
+        .sort((a,b)=>a.distNum-b.distNum)
+        .slice(0,3);
+    }
+    return pool;
   }
 
-  return pool.slice(0,6);
+  return {
+    sold:     buildPool(s=>s==='Closed'),
+    contract: buildPool(s=>s==='ActiveUnderContract'||s==='Pending'),
+    active:   buildPool(s=>s==='Active'||s==='ComingSoon'),
+  };
+}
+
+function renderCompTier(items, tierClass, label){
+  if(!items.length) return `
+    <div class="comp-tier-header">
+      <span class="comp-tier-label ${tierClass}">${label}</span>
+      <div class="comp-tier-line"></div>
+    </div>
+    <div class="comp-empty">None found nearby</div>`;
+  return `
+    <div class="comp-tier-header">
+      <span class="comp-tier-label ${tierClass}">${label}</span>
+      <div class="comp-tier-line"></div>
+    </div>
+    ${items.map(c=>`
+      <div class="comp-item ${tierClass===('contract')?'contract-item':tierClass==='active'?'active-item':''}" onclick="showDetail(D.find(x=>x.id===${c.id}))">
+        <div>
+          <div class="comp-addr">${c.a}</div>
+          <div class="comp-meta">${c.z} · ${statusLabel(c.s)} · ${c.distNum.toFixed(2)} mi away</div>
+        </div>
+        <div class="comp-price">${fmt(c.sp||c.p)}</div>
+      </div>`).join('')}`;
 }
 
 // ── NEAR ME ──
