@@ -2028,7 +2028,7 @@ function panToComp(lat,lng){
   if(map) map.panTo([lat,lng]);
 }
 
-
+function updateCmaSummaryStats(){
   const all=[];
   ['sold','contract','active'].forEach(t=>_cmaSlots[t].forEach(s=>{ if(s) all.push(s.sp||s.p||0); }));
   const cntEl=document.getElementById('cma-sum-count');
