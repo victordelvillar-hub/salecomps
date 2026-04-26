@@ -644,205 +644,210 @@ body {
 
 .zip-tip{background:rgba(13,27,42,0.9);color:#fff;border:none;border-radius:6px;font-size:.75rem;padding:4px 8px;}
 
-/* ── CMA PANEL ── */
-#cma-panel {
-  width: 320px;
-  background: var(--off-white);
-  flex-shrink: 0;
-  border-right: 1px solid var(--gray-light);
-  display: none;
-  flex-direction: column;
-  overflow: hidden;
+/* ── CMA MODE in detail panel ── */
+.det-cma-bar {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
-#cma-panel.open { display: flex; }
-.cma-header {
-  background: var(--navy);
-  padding: 14px 16px;
-  flex-shrink: 0;
+.det-start-cma-btn {
+  flex: 1;
+  padding: 11px;
+  background: var(--gold);
+  color: var(--navy);
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.3px;
 }
-.cma-header-top {
+.det-start-cma-btn:hover { background: var(--gold-light); }
+.det-start-cma-btn.cma-active {
+  background: rgba(240,165,0,0.15);
+  color: var(--gold);
+  border: 1px solid rgba(240,165,0,0.4);
+}
+
+/* CMA mode banner inside det-body */
+.cma-mode-banner {
+  background: rgba(240,165,0,0.1);
+  border: 1px solid rgba(240,165,0,0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
-.cma-title {
+.cma-mode-label {
   font-family: 'Syne', sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--gold);
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
 }
-.cma-close-btn {
-  background: rgba(255,255,255,0.1);
-  border: none;
-  color: var(--white);
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s;
-}
-.cma-close-btn:hover { background: rgba(255,255,255,0.2); }
-.cma-subject {
-  background: rgba(240,165,0,0.1);
-  border: 1px solid rgba(240,165,0,0.25);
-  border-radius: 8px;
-  padding: 10px 12px;
-}
-.cma-subject-label {
-  font-size: 9px;
-  font-weight: 700;
+.cma-back-btn {
+  background: none;
+  border: 1px solid rgba(240,165,0,0.3);
+  border-radius: 6px;
   color: var(--gold);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom: 3px;
-}
-.cma-subject-addr {
-  font-family: 'Syne', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--white);
-  margin-bottom: 2px;
-}
-.cma-subject-price {
-  font-size: 13px;
-  color: var(--gold);
-  font-family: 'Syne', sans-serif;
+  font-size: 11px;
   font-weight: 600;
-}
-.cma-subject-empty {
-  font-size: 12px;
-  color: var(--gray);
-  font-style: italic;
-  text-align: center;
-  padding: 4px 0;
-}
-.cma-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-}
-.cma-body::-webkit-scrollbar { width: 4px; }
-.cma-body::-webkit-scrollbar-thumb { background: var(--gray-light); border-radius: 2px; }
-.cma-tier-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 6px;
-}
-.cma-tier-header:first-child { margin-top: 0; }
-.cma-tier-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
   font-family: 'Syne', sans-serif;
-  white-space: nowrap;
-}
-.cma-tier-label.sold { color: var(--red); }
-.cma-tier-label.contract { color: var(--amber); }
-.cma-tier-label.active { color: var(--green); }
-.cma-tier-line { flex: 1; height: 1px; background: var(--gray-light); }
-.cma-slot {
-  background: var(--white);
-  border: 1px solid var(--gray-light);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
+  padding: 4px 10px;
   cursor: pointer;
   transition: all 0.15s;
-  position: relative;
 }
-.cma-slot:hover { border-color: var(--red); }
-.cma-slot.filled:hover::after {
-  content: '✕ Remove';
-  position: absolute;
-  top: 8px; right: 8px;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--red);
-  font-family: 'Syne', sans-serif;
-  background: rgba(239,68,68,0.08);
-  padding: 2px 6px;
-  border-radius: 4px;
+.cma-back-btn:hover { background: rgba(240,165,0,0.1); }
+
+/* CMA comp slots */
+.cma-comp-slot {
+  background: var(--off-white);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border: 1px solid var(--gray-light);
+  transition: border-color 0.15s;
 }
-.cma-slot.empty {
-  border: 1.5px dashed var(--gray-light);
-  background: transparent;
-  cursor: default;
+.cma-comp-slot.replacing {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(240,165,0,0.15);
+}
+.cma-comp-slot.sold-slot   { border-left: 3px solid var(--red); }
+.cma-comp-slot.contract-slot { border-left: 3px solid var(--amber); }
+.cma-comp-slot.active-slot   { border-left: 3px solid var(--green); }
+.cma-slot-content {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 48px;
+  padding: 10px 10px 10px 12px;
+  gap: 8px;
+  cursor: pointer;
 }
-.cma-slot.empty:hover { border-color: var(--gold); }
-.cma-slot-add {
-  font-size: 12px;
-  color: var(--gray);
-  font-family: 'DM Sans', sans-serif;
-}
-.cma-slot.empty:hover .cma-slot-add { color: var(--gold); }
+.cma-slot-content:hover { background: #f0f4fa; }
+.cma-slot-info { flex: 1; min-width: 0; }
 .cma-slot-addr {
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
   font-family: 'Syne', sans-serif;
-  margin-bottom: 2px;
-  padding-right: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.cma-slot-meta {
-  font-size: 11px;
-  color: var(--gray);
-}
+.cma-slot-meta { font-size: 11px; color: var(--gray); margin-top: 1px; }
 .cma-slot-price {
   font-size: 14px;
   font-weight: 700;
   color: var(--navy);
   font-family: 'Syne', sans-serif;
-  margin-top: 4px;
+  white-space: nowrap;
 }
-/* tier accent borders on filled slots */
-.cma-slot.filled.sold-slot { border-left: 3px solid var(--red); }
-.cma-slot.filled.contract-slot { border-left: 3px solid var(--amber); }
-.cma-slot.filled.active-slot { border-left: 3px solid var(--green); }
-
-/* ── CMA FOOTER ── */
-.cma-footer {
-  flex-shrink: 0;
+.cma-slot-actions {
+  display: flex;
   border-top: 1px solid var(--gray-light);
-  background: var(--white);
-  padding: 12px;
 }
-.cma-summary {
+.cma-slot-act-btn {
+  flex: 1;
+  padding: 7px 0;
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Syne', sans-serif;
+  cursor: pointer;
+  transition: background 0.12s;
+  letter-spacing: 0.3px;
+}
+.cma-slot-act-btn.remove { color: var(--red); }
+.cma-slot-act-btn.remove:hover { background: rgba(239,68,68,0.08); }
+.cma-slot-act-btn.replace { color: var(--blue); border-left: 1px solid var(--gray-light); }
+.cma-slot-act-btn.replace:hover { background: rgba(59,130,246,0.08); }
+.cma-slot-act-btn.replace.active { background: rgba(59,130,246,0.12); color: var(--blue); }
+
+/* Empty slot */
+.cma-empty-slot {
+  border: 1.5px dashed var(--gray-light);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  cursor: default;
+  transition: border-color 0.15s;
+}
+.cma-empty-slot.replacing {
+  border-color: var(--gold);
+  background: rgba(240,165,0,0.04);
+  cursor: crosshair;
+}
+.cma-empty-slot-text {
+  font-size: 12px;
+  color: var(--gray);
+  font-family: 'DM Sans', sans-serif;
+}
+.cma-empty-slot.replacing .cma-empty-slot-text { color: var(--gold); font-weight: 600; }
+
+/* Replace mode map overlay hint */
+#replace-hint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Syne', sans-serif;
+  color: var(--white);
+  z-index: 700;
+  display: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  pointer-events: none;
+}
+#replace-hint span { color: var(--gold); }
+
+/* CMA summary footer (inside det-body) */
+.cma-summary-block {
+  background: var(--navy);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+.cma-summary-stats {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
-.cma-stat {
-  text-align: center;
-}
-.cma-stat .val {
+.cma-sum-stat .val {
   font-family: 'Syne', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--gold);
   line-height: 1;
 }
-.cma-stat .lbl {
+.cma-sum-stat .lbl {
   font-size: 9px;
   color: var(--gray);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-top: 2px;
+  margin-top: 3px;
 }
-.cma-actions {
+.cma-action-btns {
   display: flex;
   gap: 8px;
 }
-.cma-btn {
+.cma-act-btn {
   flex: 1;
   padding: 10px 8px;
   border: none;
@@ -854,79 +859,33 @@ body {
   transition: all 0.15s;
   letter-spacing: 0.3px;
 }
-.cma-btn-copy {
-  background: var(--navy);
+.cma-act-copy {
+  background: rgba(255,255,255,0.1);
   color: var(--white);
+  border: 1px solid rgba(255,255,255,0.15);
 }
-.cma-btn-copy:hover { background: var(--navy-light); }
-.cma-btn-generate {
-  background: var(--gray-light);
+.cma-act-copy:hover { background: rgba(255,255,255,0.18); }
+.cma-act-generate {
+  background: rgba(255,255,255,0.06);
   color: var(--gray);
   cursor: not-allowed;
   position: relative;
 }
-.cma-btn-generate:hover::after {
+.cma-act-generate:hover::after {
   content: 'Coming Soon';
   position: absolute;
   bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--navy);
-  color: var(--white);
+  background: var(--white);
+  color: var(--navy);
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 6px;
   white-space: nowrap;
-  font-weight: 400;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
-
-/* ── ADD TO CMA BUTTON in detail panel ── */
-.add-to-cma-btn {
-  display: block;
-  width: 100%;
-  margin-top: 14px;
-  padding: 12px;
-  background: var(--gold);
-  color: var(--navy);
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 700;
-  font-family: 'Syne', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.3px;
-}
-.add-to-cma-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
-.add-to-cma-btn.already-added {
-  background: rgba(0,196,140,0.15);
-  color: var(--green);
-  cursor: default;
-}
-.add-to-cma-btn.already-added:hover { transform: none; }
-.add-to-cma-btn.cma-full {
-  background: rgba(255,255,255,0.1);
-  color: var(--gray);
-  cursor: not-allowed;
-}
-.add-to-cma-btn.cma-full:hover { transform: none; }
-
-/* ── CMA TOGGLE BUTTON in nav ── */
-.cma-toggle-btn {
-  background: rgba(240,165,0,0.12);
-  border: 1px solid rgba(240,165,0,0.3);
-  border-radius: 8px;
-  color: var(--gold);
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  font-family: 'Syne', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.cma-toggle-btn:hover { background: rgba(240,165,0,0.2); }
-.cma-toggle-btn.active { background: var(--gold); color: var(--navy); }
 
 /* ── PRICE HEAT LEGEND ── */
 #price-heat-legend {
@@ -1006,7 +965,10 @@ body {
         <div class="val" id="on-map-count">16,635</div>
         <div class="lbl">On Map</div>
       </div>
-      <button class="cma-toggle-btn" id="cma-nav-btn" onclick="toggleCmaPanel()">📋 CMA</button>
+      <div class="nav-stat" id="cma-nav-badge" style="display:none;cursor:pointer" onclick="exitCmaMode()" title="Exit CMA mode">
+        <div class="val" style="color:var(--gold);font-size:12px">📋 CMA</div>
+        <div class="lbl" id="cma-badge-count">0 comps</div>
+      </div>
     </div>
   </div>
 
@@ -1198,35 +1160,10 @@ body {
       <div id="prop-list"></div>
     </div>
 
-    <!-- CMA PANEL -->
-    <div id="cma-panel">
-      <div class="cma-header">
-        <div class="cma-header-top">
-          <div class="cma-title">📋 CMA Editor</div>
-          <button class="cma-close-btn" onclick="toggleCmaPanel()">✕</button>
-        </div>
-        <div class="cma-subject" id="cma-subject-block">
-          <div class="cma-subject-empty">Open a property and click "Set as Subject" to begin</div>
-        </div>
-      </div>
-      <div class="cma-body" id="cma-body">
-        <!-- slots rendered by JS -->
-      </div>
-      <div class="cma-footer">
-        <div class="cma-summary" id="cma-summary">
-          <div class="cma-stat"><div class="val" id="cma-count">0</div><div class="lbl">Comps</div></div>
-          <div class="cma-stat"><div class="val" id="cma-avg">—</div><div class="lbl">Avg Price</div></div>
-          <div class="cma-stat"><div class="val" id="cma-range">—</div><div class="lbl">Range</div></div>
-        </div>
-        <div class="cma-actions">
-          <button class="cma-btn cma-btn-copy" onclick="copyCompsList()">📋 Copy Comps</button>
-          <button class="cma-btn cma-btn-generate" title="Coming Soon">✨ Full CMA</button>
-        </div>
-      </div>
-    </div>
-
     <!-- MAP -->
     <div id="map"></div>
+    <!-- Replace mode hint overlay -->
+    <div id="replace-hint">🎯 Click a <span>map pin</span> to replace this comp</div>
 
     <!-- FLOATING MAP CONTROLS -->
     <div class="map-controls">
@@ -1264,7 +1201,9 @@ body {
         <div class="det-sub" id="det-sub"></div>
         <div class="det-status-label" id="det-status-lbl"></div>
         <div class="det-price" id="det-price"></div>
-        <button class="add-to-cma-btn" id="add-to-cma-btn" onclick="addToCma()">+ Add to CMA</button>
+        <div class="det-cma-bar">
+          <button class="det-start-cma-btn" id="start-cma-btn" onclick="startCmaMode()">📋 Start CMA</button>
+        </div>
       </div>
       <div class="det-body" id="det-body"></div>
     </div>
@@ -1481,8 +1420,10 @@ function renderList(props){
 
 // ── DETAIL ──
 function showDetail(p){
+  // If replace mode is active, intercept the click
+  if(_replaceState){ handleReplacePickFromMap(p); return; }
+
   selectedId=p.id;
-  _detailProp=p;  // track for CMA
 
   // Update selected card
   document.querySelectorAll('.prop-card').forEach(c=>c.classList.remove('selected'));
@@ -1493,59 +1434,34 @@ function showDetail(p){
   if(p.lat&&p.lng) map.panTo([p.lat,p.lng]);
 
   // Header
-  // Avoid double unit: only append p.u if it's not already in p.a
   const addrDisplay=p.u&&!p.a.includes('#'+p.u)?p.a+' #'+p.u:p.a;
   document.getElementById('det-addr').textContent=addrDisplay;
   document.getElementById('det-sub').textContent='Washington, DC '+(p.z||'')+(p.sub?' · '+p.sub:'');
   document.getElementById('det-status-lbl').textContent=statusLabel(p.s);
   document.getElementById('det-price').textContent=fmt(p.sp||p.p);
 
-  // Body
-  const tiers=findCompsByTier(p, _compRadius);
-  document.getElementById('det-body').innerHTML=`
-    <div class="det-section">
-      <div class="det-section-title">Property Details</div>
-      <div class="det-grid">
-        <div class="det-field"><div class="lbl">Bedrooms</div><div class="val">${p.b||'—'}</div></div>
-        <div class="det-field"><div class="lbl">Bathrooms</div><div class="val">${p.ba||'—'}</div></div>
-        <div class="det-field"><div class="lbl">Sq Footage</div><div class="val">${p.sf?p.sf.toLocaleString():'—'}</div></div>
-        <div class="det-field"><div class="lbl">Status</div><div class="val">${statusLabel(p.s)}</div></div>
-        <div class="det-field"><div class="lbl">Days on Market</div><div class="val">${p.dom||'—'}</div></div>
-        <div class="det-field"><div class="lbl">Year Built</div><div class="val">${p.yr||'—'}</div></div>
-        <div class="det-field"><div class="lbl">List Price</div><div class="val">${fmt(p.op)}</div></div>
-        <div class="det-field"><div class="lbl">Sold Price</div><div class="val">${fmt(p.sp)}</div></div>
-        ${p.hoa?`<div class="det-field"><div class="lbl">HOA/Month</div><div class="val">${fmt(p.hoa)}</div></div>`:''}</div>
-        <div class="det-field"><div class="lbl">Settled Date</div><div class="val">${p.sd||'—'}</div></div>
-        <div class="det-field"><div class="lbl">MLS #</div><div class="val" style="font-size:11px">${p.n||'—'}</div></div>
-        ${p.sty?`<div class="det-field"><div class="lbl">Style</div><div class="val">${p.sty}</div></div>`:''}
-      </div>
-    </div>
+  // Track subject for CMA
+  _cmaSubject=p;
 
-    ${p.ag?`
-    <div class="det-section">
-      <div class="det-section-title">Listing Agent</div>
-      <div class="agent-card">
-        <div class="agent-name">${p.ag}</div>
-        <div class="agent-office">${p.off||''}</div>
-        ${p.agp?`<div class="agent-phone">📞 ${p.agp}</div>`:''}
-      </div>
-    </div>`:''}
+  // Start CMA button state
+  const cmaBtn=document.getElementById('start-cma-btn');
+  if(cmaBtn){
+    if(_cmaMode && _cmaSubject && _cmaSubject.id===p.id){
+      cmaBtn.classList.add('cma-active');
+      cmaBtn.textContent='📋 Editing CMA';
+    } else {
+      cmaBtn.classList.remove('cma-active');
+      cmaBtn.textContent='📋 Start CMA';
+    }
+  }
 
-    <div class="det-section">
-      <div class="det-section-title">Nearby Comps</div>
-      <div class="comp-radius-toggle">
-        <button class="comp-radius-btn ${_compRadius===0.25?'active':''}" onclick="setCompRadius(0.25,'${p.id}')">0.25 mi</button>
-        <button class="comp-radius-btn ${_compRadius===0.5?'active':''}" onclick="setCompRadius(0.5,'${p.id}')">0.5 mi</button>
-        <button class="comp-radius-btn ${_compRadius===1?'active':''}" onclick="setCompRadius(1,'${p.id}')">1 mi</button>
-      </div>
-      ${renderCompTier(tiers.sold,'sold','● Sold — Baseline')}
-      ${renderCompTier(tiers.contract,'contract','◆ Market Pulse — Under Contract')}
-      ${renderCompTier(tiers.active,'active','▲ Current Competition — Active')}
-    </div>
-  `;
+  // Body — CMA mode stays in CMA if same subject; resets if different property
+  if(_cmaMode && _cmaSubject && _cmaSubject.id!==p.id){
+    exitCmaMode();
+  }
 
+  renderDetailBody(p);
   document.getElementById('detail-panel').classList.add('open');
-  updateAddToCmaBtn();
 }
 
 function closeDetail(){
@@ -1556,9 +1472,17 @@ function closeDetail(){
 
 function setCompRadius(r, pid){
   _compRadius=r;
-  // Re-render the currently open detail panel with new radius
   const p=D.find(x=>x.id==pid||x.id==+pid);
-  if(p) showDetail(p);
+  if(!p) return;
+  // In CMA mode, refresh slots from new radius
+  if(_cmaMode){
+    const tiers=findCompsByTier(p, r);
+    _cmaSlots.sold    = padSlots(tiers.sold,    3);
+    _cmaSlots.contract= padSlots(tiers.contract, 3);
+    _cmaSlots.active  = padSlots(tiers.active,   3);
+    updateCmaBadge();
+  }
+  renderDetailBody(p);
 }
 
 // ── COMPS — 3-tier: Sold / Market Pulse (Under Contract) / Current Competition (Active) ──
@@ -1889,225 +1813,279 @@ function toggleList(){
   panel.style.display=listVisible?'block':'none';
 }
 
+// ════════════════════════════════════════════════
 // ── CMA EDITOR ──
-let cmaOpen=false;
-let cmaSubject=null;          // the subject property object
-let cmaSlots={                // 3 slots per tier, null = empty
+// ════════════════════════════════════════════════
+let _cmaMode=false;
+let _cmaSubject=null;           // subject property object
+let _cmaSlots={                 // 3 slots per tier
   sold:    [null,null,null],
   contract:[null,null,null],
   active:  [null,null,null]
 };
-let _detailProp=null;         // currently open detail property
+let _replaceState=null;         // {tier, idx} when replace mode active
 
-// Which tier does a status belong to?
 function cmaTierForStatus(s){
   if(s==='Closed')                               return 'sold';
   if(s==='ActiveUnderContract'||s==='Pending')   return 'contract';
   if(s==='Active'||s==='ComingSoon')             return 'active';
-  return 'sold'; // fallback
+  return 'sold';
 }
 
-function toggleCmaPanel(){
-  cmaOpen=!cmaOpen;
-  const panel=document.getElementById('cma-panel');
-  const navBtn=document.getElementById('cma-nav-btn');
-  if(cmaOpen){
-    panel.classList.add('open');
-    navBtn.classList.add('active');
-    renderCmaPanel();
-  } else {
-    panel.classList.remove('open');
-    navBtn.classList.remove('active');
-  }
-  // Let map recalculate size
-  setTimeout(()=>map&&map.invalidateSize(),310);
+// ── Enter CMA mode from currently open detail property ──
+function startCmaMode(){
+  if(!_cmaSubject) return; // safety — button only shown when _cmaSubject set
+  _cmaMode=true;
+  cancelReplaceMode();
+
+  // Pre-populate slots from the already-computed nearby comps
+  const tiers=findCompsByTier(_cmaSubject, _compRadius);
+  _cmaSlots.sold    = padSlots(tiers.sold,    3);
+  _cmaSlots.contract= padSlots(tiers.contract, 3);
+  _cmaSlots.active  = padSlots(tiers.active,   3);
+
+  document.getElementById('start-cma-btn').classList.add('cma-active');
+  document.getElementById('start-cma-btn').textContent='📋 Editing CMA';
+
+  // Show nav badge
+  document.getElementById('cma-nav-badge').style.display='block';
+
+  renderDetailBody(_cmaSubject);
+  updateCmaBadge();
 }
 
-// Called when "Set as Subject" is clicked from detail panel
-function setAsCmaSubject(){
-  if(!_detailProp) return;
-  cmaSubject=_detailProp;
-  // Open CMA panel if not already open
-  if(!cmaOpen) toggleCmaPanel();
-  else renderCmaPanel();
-  updateAddToCmaBtn();
+function exitCmaMode(){
+  _cmaMode=false;
+  cancelReplaceMode();
+  _cmaSlots={sold:[null,null,null],contract:[null,null,null],active:[null,null,null]};
+  const btn=document.getElementById('start-cma-btn');
+  if(btn){ btn.classList.remove('cma-active'); btn.textContent='📋 Start CMA'; }
+  document.getElementById('cma-nav-badge').style.display='none';
+  if(_cmaSubject) renderDetailBody(_cmaSubject);
 }
 
-// Called when "+ Add to CMA" is clicked in detail panel header
-function addToCma(){
-  if(!_detailProp) return;
-  const p=_detailProp;
-
-  // If no subject set yet — first property becomes subject
-  if(!cmaSubject){
-    cmaSubject=p;
-    if(!cmaOpen) toggleCmaPanel();
-    else renderCmaPanel();
-    updateAddToCmaBtn();
-    return;
-  }
-
-  // Can't add subject again as a comp
-  if(cmaSubject.id===p.id){
-    if(!cmaOpen) toggleCmaPanel();
-    return;
-  }
-
-  // Already in a slot?
-  const already=isAlreadyInCma(p.id);
-  if(already) { if(!cmaOpen) toggleCmaPanel(); return; }
-
-  // Find the right tier
-  const tier=cmaTierForStatus(p.s);
-  const slots=cmaSlots[tier];
-  const emptyIdx=slots.findIndex(s=>s===null);
-  if(emptyIdx===-1){
-    // Tier full — notify via button state
-    updateAddToCmaBtn();
-    return;
-  }
-  slots[emptyIdx]=p;
-
-  if(!cmaOpen) toggleCmaPanel();
-  else renderCmaPanel();
-  updateAddToCmaBtn();
+function padSlots(arr, n){
+  const out=arr.slice(0,n).map(x=>x||null);
+  while(out.length<n) out.push(null);
+  return out;
 }
 
-function isAlreadyInCma(id){
-  for(const tier of ['sold','contract','active']){
-    if(cmaSlots[tier].some(s=>s&&s.id===id)) return true;
+// ── Replace mode: user clicks a tier/slot's Replace button ──
+function activateReplaceMode(tier, idx){
+  // Toggle off if already this slot
+  if(_replaceState&&_replaceState.tier===tier&&_replaceState.idx===idx){
+    cancelReplaceMode();
+    return;
   }
-  return false;
+  _replaceState={tier,idx};
+  document.getElementById('replace-hint').style.display='block';
+  renderCmaSlots(); // re-render to highlight the active slot
 }
 
-function removeFromCma(tier, idx){
-  if(!confirm('Remove this comp from the CMA?')) return;
-  cmaSlots[tier][idx]=null;
-  renderCmaPanel();
-  updateAddToCmaBtn();
+function cancelReplaceMode(){
+  _replaceState=null;
+  document.getElementById('replace-hint').style.display='none';
+  if(_cmaMode) renderCmaSlots();
 }
 
-// Update the "+ Add to CMA" button state based on current detail property
-function updateAddToCmaBtn(){
-  const btn=document.getElementById('add-to-cma-btn');
-  if(!btn||!_detailProp) return;
-  const p=_detailProp;
-
-  // This is the subject property
-  if(cmaSubject&&cmaSubject.id===p.id){
-    btn.textContent='⭐ Subject Property';
-    btn.className='add-to-cma-btn already-added';
-    return;
-  }
-  // Already a comp
-  if(isAlreadyInCma(p.id)){
-    btn.textContent='✓ In CMA';
-    btn.className='add-to-cma-btn already-added';
-    return;
-  }
-  // Check if its tier is full
-  const tier=cmaTierForStatus(p.s);
-  const tierFull=cmaSlots[tier].every(s=>s!==null);
-  if(tierFull){
-    const tierNames={sold:'Baseline',contract:'Market Pulse',active:'Competition'};
-    btn.textContent=`${tierNames[tier]} tier full`;
-    btn.className='add-to-cma-btn cma-full';
-    return;
-  }
-  // No subject yet → first click sets subject
-  if(!cmaSubject){
-    btn.textContent='⭐ Set as Subject Property';
-    btn.className='add-to-cma-btn';
-    return;
-  }
-  // Normal add
-  const tierLabels={sold:'Baseline',contract:'Market Pulse',active:'Competition'};
-  btn.textContent=`+ Add to CMA · ${tierLabels[tier]}`;
-  btn.className='add-to-cma-btn';
+// Called from map pin click when replace mode is active
+function handleReplacePickFromMap(p){
+  if(!_replaceState) return false;
+  const {tier,idx}=_replaceState;
+  // Don't allow placing subject in a comp slot
+  if(_cmaSubject&&p.id===_cmaSubject.id){ cancelReplaceMode(); return true; }
+  _cmaSlots[tier][idx]=p;
+  cancelReplaceMode();
+  renderDetailBody(_cmaSubject);
+  updateCmaBadge();
+  return true;
 }
 
-function renderCmaPanel(){
-  // Subject block
-  const subBlock=document.getElementById('cma-subject-block');
-  if(cmaSubject){
-    subBlock.innerHTML=`
-      <div class="cma-subject-label">Subject Property</div>
-      <div class="cma-subject-addr">${cmaSubject.a}</div>
-      <div class="cma-subject-price">${fmt(cmaSubject.sp||cmaSubject.p)} · ${statusLabel(cmaSubject.s)}</div>`;
-  } else {
-    subBlock.innerHTML=`<div class="cma-subject-empty">Open a property and click "+ Add to CMA" to begin</div>`;
-  }
+function removeFromSlot(tier, idx){
+  _cmaSlots[tier][idx]=null;
+  cancelReplaceMode();
+  renderCmaSlots();
+  updateCmaBadge();
+}
 
-  // Slots
-  const body=document.getElementById('cma-body');
+function updateCmaBadge(){
+  let count=0;
+  ['sold','contract','active'].forEach(t=>_cmaSlots[t].forEach(s=>{ if(s) count++; }));
+  document.getElementById('cma-badge-count').textContent=count+' comp'+(count!==1?'s':'');
+}
+
+// ── Render CMA slots only (called on remove/replace without full re-render) ──
+function renderCmaSlots(){
+  const wrap=document.getElementById('cma-slots-wrap');
+  if(!wrap) return;
+  wrap.innerHTML=buildCmaSlotsHTML();
+  updateCmaSummaryStats();
+}
+
+function buildCmaSlotsHTML(){
   const tierDefs=[
-    {key:'sold',    cls:'sold',     label:'● Sold — Baseline',                slotCls:'sold-slot'},
-    {key:'contract',cls:'contract', label:'◆ Market Pulse — Under Contract',  slotCls:'contract-slot'},
-    {key:'active',  cls:'active',   label:'▲ Current Competition — Active',   slotCls:'active-slot'},
+    {key:'sold',     cls:'sold-slot',     tierCls:'sold',     label:'● SOLD — BASELINE'},
+    {key:'contract', cls:'contract-slot', tierCls:'contract', label:'◆ MARKET PULSE — UNDER CONTRACT'},
+    {key:'active',   cls:'active-slot',   tierCls:'active',   label:'▲ CURRENT COMPETITION — ACTIVE'},
   ];
-
-  body.innerHTML=tierDefs.map(({key,cls,label,slotCls})=>`
-    <div class="cma-tier-header">
-      <span class="cma-tier-label ${cls}">${label}</span>
-      <div class="cma-tier-line"></div>
+  return tierDefs.map(({key,cls,tierCls,label})=>`
+    <div class="comp-tier-header">
+      <span class="comp-tier-label ${tierCls}">${label}</span>
+      <div class="comp-tier-line"></div>
     </div>
-    ${cmaSlots[key].map((slot,i)=>slot?`
-      <div class="cma-slot filled ${slotCls}" onclick="removeFromCma('${key}',${i})" title="Click to remove">
-        <div class="cma-slot-addr">${slot.a}</div>
-        <div class="cma-slot-meta">${slot.z||''} · ${statusLabel(slot.s)}${slot.distNum?' · '+slot.distNum.toFixed(2)+' mi':''}</div>
-        <div class="cma-slot-price">${fmt(slot.sp||slot.p)}</div>
-      </div>`:`
-      <div class="cma-slot empty">
-        <span class="cma-slot-add">+ Add a comp</span>
-      </div>`
-    ).join('')}
+    ${_cmaSlots[key].map((slot,i)=>{
+      const isReplacing=_replaceState&&_replaceState.tier===key&&_replaceState.idx===i;
+      if(slot){
+        return `
+        <div class="cma-comp-slot ${cls}${isReplacing?' replacing':''}">
+          <div class="cma-slot-content" onclick="showDetail(D.find(x=>x.id===${slot.id}))">
+            <div class="cma-slot-info">
+              <div class="cma-slot-addr">${slot.a}</div>
+              <div class="cma-slot-meta">${slot.z||''} · ${statusLabel(slot.s)}${slot.distNum?' · '+slot.distNum.toFixed(2)+' mi':''}</div>
+            </div>
+            <div class="cma-slot-price">${fmt(slot.sp||slot.p)}</div>
+          </div>
+          <div class="cma-slot-actions">
+            <button class="cma-slot-act-btn remove" onclick="removeFromSlot('${key}',${i})">✕ Remove</button>
+            <button class="cma-slot-act-btn replace${isReplacing?' active':''}" onclick="activateReplaceMode('${key}',${i})">${isReplacing?'⏹ Cancel':'🔄 Replace'}</button>
+          </div>
+        </div>`;
+      } else {
+        return `
+        <div class="cma-empty-slot${isReplacing?' replacing':''}">
+          <span class="cma-empty-slot-text">${isReplacing?'👆 Click a map pin to fill this slot':'+ Empty slot'}</span>
+        </div>`;
+      }
+    }).join('')}
   `).join('');
-
-  updateCmaSummary();
 }
 
-function updateCmaSummary(){
+function updateCmaSummaryStats(){
   const all=[];
-  for(const tier of ['sold','contract','active']){
-    cmaSlots[tier].forEach(s=>{ if(s) all.push(s.sp||s.p||0); });
-  }
-  const countEl=document.getElementById('cma-count');
-  const avgEl=document.getElementById('cma-avg');
-  const rangeEl=document.getElementById('cma-range');
-
+  ['sold','contract','active'].forEach(t=>_cmaSlots[t].forEach(s=>{ if(s) all.push(s.sp||s.p||0); }));
+  const cntEl=document.getElementById('cma-sum-count');
+  const avgEl=document.getElementById('cma-sum-avg');
+  const rngEl=document.getElementById('cma-sum-range');
+  if(!cntEl) return;
   if(!all.length){
-    countEl.textContent='0';
-    avgEl.textContent='—';
-    rangeEl.textContent='—';
+    cntEl.textContent='0'; avgEl.textContent='—'; rngEl.textContent='—';
     return;
   }
   const avg=all.reduce((a,b)=>a+b,0)/all.length;
-  const mn=Math.min(...all), mx=Math.max(...all);
-  countEl.textContent=all.length;
+  cntEl.textContent=all.length;
   avgEl.textContent='$'+Math.round(avg/1000)+'K';
-  rangeEl.textContent='$'+Math.round(mn/1000)+'K–$'+Math.round(mx/1000)+'K';
+  rngEl.textContent='$'+Math.round(Math.min(...all)/1000)+'K – $'+Math.round(Math.max(...all)/1000)+'K';
 }
 
-function copyCompsList(){
-  let lines=[];
-  if(cmaSubject){
-    lines.push('CMA COMP ANALYSIS — AgentEdge SaleComps');
-    lines.push('=========================================');
-    lines.push('SUBJECT PROPERTY');
-    lines.push(cmaSubject.a+', Washington DC '+( cmaSubject.z||''));
-    lines.push('Price: '+fmt(cmaSubject.sp||cmaSubject.p)+' | Status: '+statusLabel(cmaSubject.s));
-    lines.push('Beds: '+(cmaSubject.b||'—')+' | Baths: '+(cmaSubject.ba||'—')+' | Sqft: '+(cmaSubject.sf?cmaSubject.sf.toLocaleString():'—'));
-    lines.push('');
-  }
+// ── Render the full det-body (normal view or CMA mode) ──
+function renderDetailBody(p){
+  const tiers=findCompsByTier(p, _compRadius);
+  if(_cmaMode){
+    document.getElementById('det-body').innerHTML=`
+      <div class="cma-mode-banner">
+        <span class="cma-mode-label">📋 CMA Mode</span>
+        <button class="cma-back-btn" onclick="exitCmaMode()">← Back to Details</button>
+      </div>
 
+      <div class="det-section">
+        <div class="det-section-title">Property Details</div>
+        <div class="det-grid">
+          <div class="det-field"><div class="lbl">Bedrooms</div><div class="val">${p.b||'—'}</div></div>
+          <div class="det-field"><div class="lbl">Bathrooms</div><div class="val">${p.ba||'—'}</div></div>
+          <div class="det-field"><div class="lbl">Sq Footage</div><div class="val">${p.sf?p.sf.toLocaleString():'—'}</div></div>
+          <div class="det-field"><div class="lbl">Status</div><div class="val">${statusLabel(p.s)}</div></div>
+          <div class="det-field"><div class="lbl">List Price</div><div class="val">${fmt(p.op)}</div></div>
+          <div class="det-field"><div class="lbl">Sold Price</div><div class="val">${fmt(p.sp)}</div></div>
+          <div class="det-field"><div class="lbl">Days on Market</div><div class="val">${p.dom||'—'}</div></div>
+          <div class="det-field"><div class="lbl">Year Built</div><div class="val">${p.yr||'—'}</div></div>
+        </div>
+      </div>
+
+      <div class="det-section">
+        <div class="det-section-title">Comps — Radius
+          <span style="float:right;display:flex;gap:4px">
+            ${[0.25,0.5,1].map(r=>`<button class="comp-radius-btn${_compRadius===r?' active':''}" onclick="setCompRadius(${r},'${p.id}')" style="padding:3px 8px;font-size:10px">${r} mi</button>`).join('')}
+          </span>
+        </div>
+        <div id="cma-slots-wrap">${buildCmaSlotsHTML()}</div>
+      </div>
+
+      <div class="cma-summary-block">
+        <div class="cma-summary-stats">
+          <div class="cma-sum-stat"><div class="val" id="cma-sum-count">0</div><div class="lbl">Comps</div></div>
+          <div class="cma-sum-stat"><div class="val" id="cma-sum-avg">—</div><div class="lbl">Avg Price</div></div>
+          <div class="cma-sum-stat"><div class="val" id="cma-sum-range">—</div><div class="lbl">Range</div></div>
+        </div>
+        <div class="cma-action-btns">
+          <button class="cma-act-btn cma-act-copy" onclick="copyCompsList()">📋 Copy Comps</button>
+          <button class="cma-act-btn cma-act-generate">✨ Full CMA</button>
+        </div>
+      </div>`;
+    updateCmaSummaryStats();
+  } else {
+    // Normal detail view (unchanged)
+    document.getElementById('det-body').innerHTML=`
+    <div class="det-section">
+      <div class="det-section-title">Property Details</div>
+      <div class="det-grid">
+        <div class="det-field"><div class="lbl">Bedrooms</div><div class="val">${p.b||'—'}</div></div>
+        <div class="det-field"><div class="lbl">Bathrooms</div><div class="val">${p.ba||'—'}</div></div>
+        <div class="det-field"><div class="lbl">Sq Footage</div><div class="val">${p.sf?p.sf.toLocaleString():'—'}</div></div>
+        <div class="det-field"><div class="lbl">Status</div><div class="val">${statusLabel(p.s)}</div></div>
+        <div class="det-field"><div class="lbl">Days on Market</div><div class="val">${p.dom||'—'}</div></div>
+        <div class="det-field"><div class="lbl">Year Built</div><div class="val">${p.yr||'—'}</div></div>
+        <div class="det-field"><div class="lbl">List Price</div><div class="val">${fmt(p.op)}</div></div>
+        <div class="det-field"><div class="lbl">Sold Price</div><div class="val">${fmt(p.sp)}</div></div>
+        ${p.hoa?`<div class="det-field"><div class="lbl">HOA/Month</div><div class="val">${fmt(p.hoa)}</div></div>`:''}
+        <div class="det-field"><div class="lbl">Settled Date</div><div class="val">${p.sd||'—'}</div></div>
+        <div class="det-field"><div class="lbl">MLS #</div><div class="val" style="font-size:11px">${p.n||'—'}</div></div>
+        ${p.sty?`<div class="det-field"><div class="lbl">Style</div><div class="val">${p.sty}</div></div>`:''}
+      </div>
+    </div>
+
+    ${p.ag?`
+    <div class="det-section">
+      <div class="det-section-title">Listing Agent</div>
+      <div class="agent-card">
+        <div class="agent-name">${p.ag}</div>
+        <div class="agent-office">${p.off||''}</div>
+        ${p.agp?`<div class="agent-phone">📞 ${p.agp}</div>`:''}
+      </div>
+    </div>`:''}
+
+    <div class="det-section">
+      <div class="det-section-title">Nearby Comps</div>
+      <div class="comp-radius-toggle">
+        <button class="comp-radius-btn ${_compRadius===0.25?'active':''}" onclick="setCompRadius(0.25,'${p.id}')">0.25 mi</button>
+        <button class="comp-radius-btn ${_compRadius===0.5?'active':''}" onclick="setCompRadius(0.5,'${p.id}')">0.5 mi</button>
+        <button class="comp-radius-btn ${_compRadius===1?'active':''}" onclick="setCompRadius(1,'${p.id}')">1 mi</button>
+      </div>
+      ${renderCompTier(tiers.sold,'sold','● Sold — Baseline')}
+      ${renderCompTier(tiers.contract,'contract','◆ Market Pulse — Under Contract')}
+      ${renderCompTier(tiers.active,'active','▲ Current Competition — Active')}
+    </div>`;
+  }
+}
+
+// ── Copy comps to clipboard ──
+function copyCompsList(){
+  const p=_cmaSubject;
+  if(!p) return;
+  const lines=[];
+  lines.push('CMA COMP ANALYSIS — AgentEdge SaleComps');
+  lines.push('=========================================');
+  lines.push('SUBJECT PROPERTY');
+  lines.push((p.a||'—')+', Washington DC '+(p.z||''));
+  lines.push('Price: '+fmt(p.sp||p.p)+' | Status: '+statusLabel(p.s));
+  lines.push('Beds: '+(p.b||'—')+' | Baths: '+(p.ba||'—')+' | Sqft: '+(p.sf?p.sf.toLocaleString():'—'));
+  lines.push('');
   const tierDefs=[
     {key:'sold',    label:'SOLD — BASELINE'},
     {key:'contract',label:'UNDER CONTRACT — MARKET PULSE'},
     {key:'active',  label:'ACTIVE — CURRENT COMPETITION'},
   ];
-
   tierDefs.forEach(({key,label})=>{
-    const filled=cmaSlots[key].filter(Boolean);
+    const filled=_cmaSlots[key].filter(Boolean);
     if(!filled.length) return;
     lines.push(label);
     lines.push('-'.repeat(label.length));
@@ -2117,29 +2095,25 @@ function copyCompsList(){
     });
     lines.push('');
   });
-
-  // Summary
   const all=[];
-  for(const tier of ['sold','contract','active'])
-    cmaSlots[tier].forEach(s=>{ if(s) all.push(s.sp||s.p||0); });
+  ['sold','contract','active'].forEach(t=>_cmaSlots[t].forEach(s=>{ if(s) all.push(s.sp||s.p||0); }));
   if(all.length){
     const avg=all.reduce((a,b)=>a+b,0)/all.length;
     lines.push('SUMMARY');
     lines.push('Comps selected: '+all.length);
     lines.push('Average price: '+fmt(avg));
     lines.push('Price range: '+fmt(Math.min(...all))+' – '+fmt(Math.max(...all)));
+    lines.push('');
   }
-
-  lines.push('');
   lines.push('Generated by AgentEdge SaleComps · '+new Date().toLocaleDateString());
-
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
-    const btn=document.querySelector('.cma-btn-copy');
+    const btn=document.querySelector('.cma-act-copy');
+    if(!btn) return;
     const orig=btn.textContent;
     btn.textContent='✓ Copied!';
     btn.style.background='var(--green)';
     setTimeout(()=>{ btn.textContent=orig; btn.style.background=''; },2000);
-  }).catch(()=>alert('Copy failed — please try again'));
+  }).catch(()=>alert('Copy failed — try again'));
 }
 </script>
 </body>
