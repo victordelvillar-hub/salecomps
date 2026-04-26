@@ -1473,6 +1473,12 @@ function showDetail(p){
   // If replace mode is active, intercept the click
   if(_replaceState){ handleReplacePickFromMap(p); return; }
 
+  // In CMA mode, never change the subject — just pan the map and ignore
+  if(_cmaMode) {
+    if(p.lat&&p.lng) map.panTo([p.lat,p.lng]);
+    return;
+  }
+
   selectedId=p.id;
 
   // Update selected card
@@ -1490,25 +1496,12 @@ function showDetail(p){
   document.getElementById('det-status-lbl').textContent=statusLabel(p.s);
   document.getElementById('det-price').textContent=fmt(p.sp||p.p);
 
-  // Track subject for CMA
+  // Track subject for CMA (only when NOT in CMA mode)
   _cmaSubject=p;
 
   // Start CMA button state
   const cmaBtn=document.getElementById('start-cma-btn');
-  if(cmaBtn){
-    if(_cmaMode && _cmaSubject && _cmaSubject.id===p.id){
-      cmaBtn.classList.add('cma-active');
-      cmaBtn.textContent='📋 Editing CMA';
-    } else {
-      cmaBtn.classList.remove('cma-active');
-      cmaBtn.textContent='📋 Start CMA';
-    }
-  }
-
-  // Body — CMA mode stays in CMA if same subject; resets if different property
-  if(_cmaMode && _cmaSubject && _cmaSubject.id!==p.id){
-    exitCmaMode();
-  }
+  if(cmaBtn){ cmaBtn.classList.remove('cma-active'); cmaBtn.textContent='📋 Start CMA'; }
 
   renderDetailBody(p);
   document.getElementById('detail-panel').classList.add('open');
