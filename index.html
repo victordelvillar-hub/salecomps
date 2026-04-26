@@ -770,6 +770,48 @@ body {
 .cma-slot-act-btn.replace.active { background: rgba(59,130,246,0.12); color: var(--blue); }
 
 /* Empty slot */
+.cma-slot-preview {
+  border-top: 1px solid var(--gray-light);
+  padding: 10px 12px;
+  background: var(--white);
+  display: none;
+}
+.cma-slot-preview.open { display: block; }
+.cma-slot-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cma-preview-field .lbl {
+  font-size: 9px;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.cma-preview-field .val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+}
+.cma-slot-pan-btn {
+  display: block;
+  width: 100%;
+  padding: 7px;
+  background: rgba(10,22,40,0.06);
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Syne', sans-serif;
+  color: var(--navy);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.cma-slot-pan-btn:hover { background: rgba(10,22,40,0.12); }
+
+/* Empty slot */
 .cma-empty-slot {
   border: 1.5px dashed var(--gray-light);
   border-radius: 8px;
@@ -1935,15 +1977,27 @@ function buildCmaSlotsHTML(){
     </div>
     ${_cmaSlots[key].map((slot,i)=>{
       const isReplacing=_replaceState&&_replaceState.tier===key&&_replaceState.idx===i;
+      const slotId='cma-slot-'+key+'-'+i;
       if(slot){
         return `
-        <div class="cma-comp-slot ${cls}${isReplacing?' replacing':''}">
-          <div class="cma-slot-content" onclick="showDetail(D.find(x=>x.id===${slot.id}))">
+        <div class="cma-comp-slot ${cls}${isReplacing?' replacing':''}" id="${slotId}">
+          <div class="cma-slot-content" onclick="toggleSlotPreview('${slotId}')">
             <div class="cma-slot-info">
               <div class="cma-slot-addr">${slot.a}</div>
               <div class="cma-slot-meta">${slot.z||''} · ${statusLabel(slot.s)}${slot.distNum?' · '+slot.distNum.toFixed(2)+' mi':''}</div>
             </div>
             <div class="cma-slot-price">${fmt(slot.sp||slot.p)}</div>
+          </div>
+          <div class="cma-slot-preview" id="${slotId}-preview">
+            <div class="cma-slot-preview-grid">
+              <div class="cma-preview-field"><div class="lbl">Beds</div><div class="val">${slot.b||'—'}</div></div>
+              <div class="cma-preview-field"><div class="lbl">Baths</div><div class="val">${slot.ba||'—'}</div></div>
+              <div class="cma-preview-field"><div class="lbl">Sqft</div><div class="val">${slot.sf?slot.sf.toLocaleString():'—'}</div></div>
+              <div class="cma-preview-field"><div class="lbl">DOM</div><div class="val">${slot.dom||'—'}</div></div>
+              <div class="cma-preview-field"><div class="lbl">List Price</div><div class="val">${fmt(slot.op)}</div></div>
+              <div class="cma-preview-field"><div class="lbl">Sold Price</div><div class="val">${fmt(slot.sp||slot.p)}</div></div>
+            </div>
+            ${slot.lat&&slot.lng?`<button class="cma-slot-pan-btn" onclick="panToComp(${slot.lat},${slot.lng})">📍 Pan map to this property</button>`:''}
           </div>
           <div class="cma-slot-actions">
             <button class="cma-slot-act-btn remove" onclick="removeFromSlot('${key}',${i})">✕ Remove</button>
@@ -1960,7 +2014,21 @@ function buildCmaSlotsHTML(){
   `).join('');
 }
 
-function updateCmaSummaryStats(){
+function toggleSlotPreview(slotId){
+  const preview=document.getElementById(slotId+'-preview');
+  if(!preview) return;
+  // Close any other open previews first
+  document.querySelectorAll('.cma-slot-preview.open').forEach(el=>{
+    if(el!==preview) el.classList.remove('open');
+  });
+  preview.classList.toggle('open');
+}
+
+function panToComp(lat,lng){
+  if(map) map.panTo([lat,lng]);
+}
+
+
   const all=[];
   ['sold','contract','active'].forEach(t=>_cmaSlots[t].forEach(s=>{ if(s) all.push(s.sp||s.p||0); }));
   const cntEl=document.getElementById('cma-sum-count');
