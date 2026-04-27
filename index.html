@@ -730,6 +730,91 @@ body {
   .nav-stat .val { font-size: 13px; }
 }
 
+/* ── MOBILE LIST SHEET ── */
+#mobile-sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(10,22,40,0.45);
+  z-index: 800;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+#mobile-sheet-overlay.open { display: block; }
+
+#mobile-list-sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 75vh;
+  background: var(--off-white);
+  border-radius: 20px 20px 0 0;
+  z-index: 801;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 -8px 40px rgba(10,22,40,0.25);
+  will-change: transform;
+}
+#mobile-list-sheet.open { transform: translateY(0); }
+
+.sheet-drag-area {
+  padding: 12px 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+.sheet-drag-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--gray-light);
+  border-radius: 2px;
+}
+
+.sheet-header {
+  padding: 4px 14px 10px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-radius: 20px 20px 0 0;
+}
+.sheet-header .count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+}
+.sheet-close-btn {
+  background: var(--gray-light);
+  border: none;
+  color: var(--text);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#mobile-sheet-list {
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+#mobile-sheet-list::-webkit-scrollbar { display: none; }
+/* On mobile only show the sheet, keep desktop panel hidden */
+@media (max-width: 768px) {
+  #mobile-list-sheet { display: flex; }
+}
+
 /* ── EMPTY STATE ── */
 .empty-state {
   padding: 40px 20px;
@@ -1340,6 +1425,21 @@ body {
       </div>
     </div>
 
+    <!-- MOBILE LIST SHEET OVERLAY -->
+    <div id="mobile-sheet-overlay" onclick="closeMobileSheet()"></div>
+
+    <!-- MOBILE LIST SHEET -->
+    <div id="mobile-list-sheet">
+      <div class="sheet-drag-area" id="sheet-drag-area">
+        <div class="sheet-drag-handle"></div>
+      </div>
+      <div class="sheet-header">
+        <span class="count" id="sheet-result-count">Loading...</span>
+        <button class="sheet-close-btn" onclick="closeMobileSheet()">✕</button>
+      </div>
+      <div id="mobile-sheet-list"></div>
+    </div>
+
     <!-- DETAIL PANEL -->
     <div id="detail-panel">
       <div class="det-header">
@@ -1522,6 +1622,7 @@ function applyFilters(){
     return db-da;
   });
 
+  window._lastFiltered=filtered;
   renderList(filtered.slice(0,150));
   renderMap(filtered);
   document.getElementById('result-count').textContent=filtered.length.toLocaleString()+' results';
@@ -1943,10 +2044,95 @@ function nearMe(){
 
 // ── TOGGLE LIST ──
 function toggleList(){
-  const panel=document.getElementById('list-panel');
-  listVisible=!listVisible;
-  panel.style.display=listVisible?'block':'none';
+  if(window.innerWidth<=768){
+    openMobileSheet();
+  } else {
+    const panel=document.getElementById('list-panel');
+    listVisible=!listVisible;
+    panel.style.display=listVisible?'block':'none';
+  }
 }
+
+function openMobileSheet(){
+  document.getElementById('mobile-sheet-overlay').classList.add('open');
+  document.getElementById('mobile-list-sheet').classList.add('open');
+  syncSheetList();
+}
+
+function closeMobileSheet(){
+  document.getElementById('mobile-sheet-overlay').classList.remove('open');
+  document.getElementById('mobile-list-sheet').classList.remove('open');
+}
+
+function syncSheetList(){
+  const sheetEl=document.getElementById('mobile-sheet-list');
+  const countEl=document.getElementById('sheet-result-count');
+  if(!sheetEl) return;
+  const props=window._lastFiltered||[];
+  if(countEl) countEl.textContent=props.length.toLocaleString()+' results';
+  if(!props.length){
+    sheetEl.innerHTML='<div class="empty-state"><div class="ico">🏠</div><p>No properties match your filters</p></div>';
+    return;
+  }
+  sheetEl.innerHTML=props.slice(0,150).map(p=>`
+    <div class="prop-card${selectedId===p.id?' selected':''}" id="mcard-${p.id}">
+      <div class="card-addr">${p.a}</div>
+      <div class="card-sub">Washington, DC ${p.z||''}${p.sub?' · '+p.sub:''}</div>
+      <div class="card-price">${fmt(p.p)}</div>
+      <div class="card-tags">
+        <span class="tag tag-beds">${p.b||'—'} Bed</span>
+        <span class="tag tag-status-${p.s}">${statusLabel(p.s)}</span>
+        ${p.sf?`<span class="tag tag-sqft">${p.sf.toLocaleString()} sqft</span>`:''}
+        ${p.dom?`<span class="tag tag-dom">${p.dom} DOM</span>`:''}
+      </div>
+    </div>
+  `).join('');
+  props.slice(0,150).forEach(p=>{
+    const card=document.getElementById('mcard-'+p.id);
+    if(card) card.onclick=()=>{ closeMobileSheet(); showDetail(p); };
+  });
+}
+
+// Swipe-to-close
+(function(){
+  let startY=0, curY=0, dragging=false;
+  function onTouchStart(e){
+    if(e.target.closest('#mobile-sheet-list')){
+      // only block if list is not scrolled to top
+      const list=document.getElementById('mobile-sheet-list');
+      if(list&&list.scrollTop>0) return;
+    }
+    startY=e.touches[0].clientY;
+    dragging=true;
+    const s=document.getElementById('mobile-list-sheet');
+    if(s) s.style.transition='none';
+  }
+  function onTouchMove(e){
+    if(!dragging) return;
+    curY=e.touches[0].clientY;
+    const dy=Math.max(0,curY-startY);
+    const s=document.getElementById('mobile-list-sheet');
+    if(s) s.style.transform='translateY('+dy+'px)';
+  }
+  function onTouchEnd(){
+    if(!dragging) return;
+    dragging=false;
+    const dy=curY-startY;
+    const s=document.getElementById('mobile-list-sheet');
+    if(!s) return;
+    s.style.transition='';
+    if(dy>80){ closeMobileSheet(); }
+    s.style.transform='';
+  }
+  document.addEventListener('DOMContentLoaded',()=>{
+    const sheet=document.getElementById('mobile-list-sheet');
+    if(sheet){
+      sheet.addEventListener('touchstart',onTouchStart,{passive:true});
+      sheet.addEventListener('touchmove',onTouchMove,{passive:true});
+      sheet.addEventListener('touchend',onTouchEnd,{passive:true});
+    }
+  });
+})();
 
 // ════════════════════════════════════════════════
 // ── CMA EDITOR ──
