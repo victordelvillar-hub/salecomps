@@ -1263,7 +1263,7 @@ body {
         <option value="">All ZIPs</option>
         <option value="20001">20001</option><option value="20002">20002</option><option value="20003">20003</option><option value="20004">20004</option><option value="20005">20005</option><option value="20006">20006</option><option value="20007">20007</option><option value="20008">20008</option><option value="20009">20009</option><option value="20010">20010</option><option value="20011">20011</option><option value="20012">20012</option><option value="20015">20015</option><option value="20016">20016</option><option value="20017">20017</option><option value="20018">20018</option><option value="20019">20019</option><option value="20020">20020</option><option value="20024">20024</option><option value="20032">20032</option><option value="20036">20036</option><option value="20037">20037</option>
       </select>
-      <select class="fsel" id="nbhd-filter" onchange="applyFilters()">
+      <select class="fsel" id="nbhd-filter" onchange="onNbhdFilterChange()">
         <option value="">All Neighborhoods</option>
         <option value="14TH STREET CORRIDOR">14Th Street Corridor</option>
 <option value="16TH STREET HEIGHTS">16Th Street Heights</option>
@@ -2092,8 +2092,10 @@ function renderRadiusHeat(){
 }
 
 // ── NEIGHBORHOOD BOUNDARIES ──
+// ── NEIGHBORHOOD BOUNDARIES ──
 let nbhdOn=false;
 let nbhdLayer=null;
+let _nbhdGeoJSON=null; // cached after first load
 
 function toggleNeighborhoods(){
   const btn=document.getElementById('nbhd-btn');
@@ -2101,85 +2103,53 @@ function toggleNeighborhoods(){
   if(nbhdOn){
     btn.classList.add('active');
     btn.textContent='🏘️ Hide Nbhds';
-    if(nbhdLayer){ nbhdLayer.addTo(map); return; }
-    // Try DC Open Data GeoJSON first, fall back to inline
-    fetch('https://opendata.arcgis.com/datasets/f6aa6a394c8b410e8d3baabd0bf3b88c_0.geojson')
-      .then(r=>{ if(!r.ok) throw new Error('fetch failed'); return r.json(); })
-      .then(geo=>paintNbhd(geo))
-      .catch(()=>paintNbhd(DC_NBHD_GEOJSON));
+    if(_nbhdGeoJSON){ paintNbhd(_nbhdGeoJSON); return; }
+    // Same-origin fetch — file lives in repo root
+    fetch('dc-neighborhood-boundaries.json')
+      .then(r=>{ if(!r.ok) throw new Error('missing'); return r.json(); })
+      .then(geo=>{ _nbhdGeoJSON=geo; paintNbhd(geo); })
+      .catch(e=>console.warn('Neighborhood GeoJSON not found — upload dc-neighborhood-boundaries.json to repo',e));
   } else {
     btn.classList.remove('active');
     btn.textContent='🏘️ Neighborhoods';
-    if(nbhdLayer){ map.removeLayer(nbhdLayer); }
+    if(nbhdLayer){ map.removeLayer(nbhdLayer); nbhdLayer=null; }
   }
 }
 
 function paintNbhd(geojson){
-  if(nbhdLayer) map.removeLayer(nbhdLayer);
+  if(nbhdLayer){ map.removeLayer(nbhdLayer); nbhdLayer=null; }
   nbhdLayer=L.geoJSON(geojson,{
     style:{
-      color:'rgba(240,165,0,0.7)',
-      weight:1.5,
-      fill:false
+      color:'rgba(240,165,0,0.85)',
+      weight:2,
+      fill:false,
+      dashArray:'4,3'
     },
     onEachFeature:function(f,layer){
-      const name=f.properties.NAME||f.properties.name||f.properties.NBH_NAMES||f.properties.nbh_names||f.properties.Neighborhood||'';
+      const name=f.properties.NAME||f.properties.name||f.properties.NBH_NAMES||f.properties.Neighborhood||'';
       if(name){
-        layer.bindTooltip(name,{
-          permanent:false,
-          className:'zip-tip',
-          sticky:true,
-          direction:'center'
-        });
+        layer.bindTooltip(name,{permanent:false,className:'zip-tip',sticky:true});
       }
     }
   });
   if(nbhdOn) nbhdLayer.addTo(map);
 }
 
-// Inline fallback — major DC neighborhoods simplified polygons
-const DC_NBHD_GEOJSON={type:'FeatureCollection',features:[
-  {type:'Feature',properties:{NAME:'Georgetown'},geometry:{type:'Polygon',coordinates:[[[-77.0900,38.9220],[-77.0550,38.9220],[-77.0550,38.9003],[-77.0650,38.8960],[-77.0900,38.8960],[-77.0900,38.9220]]]}},
-  {type:'Feature',properties:{NAME:'Dupont Circle'},geometry:{type:'Polygon',coordinates:[[[-77.0500,38.9117],[-77.0360,38.9117],[-77.0280,38.9003],[-77.0360,38.9003],[-77.0500,38.9003],[-77.0500,38.9117]]]}},
-  {type:'Feature',properties:{NAME:'Adams Morgan'},geometry:{type:'Polygon',coordinates:[[[-77.0360,38.9300],[-77.0220,38.9300],[-77.0220,38.9117],[-77.0360,38.9117],[-77.0360,38.9300]]]}},
-  {type:'Feature',properties:{NAME:'Columbia Heights'},geometry:{type:'Polygon',coordinates:[[[-77.0360,38.9480],[-77.0100,38.9480],[-77.0100,38.9300],[-77.0360,38.9300],[-77.0360,38.9480]]]}},
-  {type:'Feature',properties:{NAME:'Petworth'},geometry:{type:'Polygon',coordinates:[[[-77.0360,38.9600],[-77.0100,38.9600],[-77.0100,38.9480],[-77.0360,38.9480],[-77.0360,38.9600]]]}},
-  {type:'Feature',properties:{NAME:'Capitol Hill'},geometry:{type:'Polygon',coordinates:[[[-77.0030,38.9003],[-76.9745,38.9003],[-76.9745,38.8800],[-77.0030,38.8800],[-77.0030,38.9003]]]}},
-  {type:'Feature',properties:{NAME:'Shaw'},geometry:{type:'Polygon',coordinates:[[[-77.0229,38.9117],[-77.0030,38.9117],[-77.0030,38.8963],[-77.0155,38.8963],[-77.0229,38.8963],[-77.0229,38.9117]]]}},
-  {type:'Feature',properties:{NAME:'Logan Circle'},geometry:{type:'Polygon',coordinates:[[[-77.0280,38.9117],[-77.0229,38.9117],[-77.0229,38.8963],[-77.0280,38.8963],[-77.0280,38.9117]]]}},
-  {type:'Feature',properties:{NAME:'U Street Corridor'},geometry:{type:'Polygon',coordinates:[[[-77.0360,38.9220],[-77.0229,38.9220],[-77.0229,38.9117],[-77.0360,38.9117],[-77.0360,38.9220]]]}},
-  {type:'Feature',properties:{NAME:'H Street Corridor'},geometry:{type:'Polygon',coordinates:[[[-77.0030,38.9117],[-76.9860,38.9117],[-76.9860,38.9003],[-77.0030,38.9003],[-77.0030,38.9117]]]}},
-  {type:'Feature',properties:{NAME:'NoMa'},geometry:{type:'Polygon',coordinates:[[[-77.0030,38.9220],[-76.9973,38.9220],[-76.9973,38.9117],[-77.0030,38.9117],[-77.0030,38.9220]]]}},
-  {type:'Feature',properties:{NAME:'Brookland'},geometry:{type:'Polygon',coordinates:[[[-76.9900,38.9480],[-76.9600,38.9480],[-76.9600,38.9300],[-76.9900,38.9300],[-76.9900,38.9480]]]}},
-  {type:'Feature',properties:{NAME:'Anacostia'},geometry:{type:'Polygon',coordinates:[[[-76.9750,38.8620],[-76.9400,38.8620],[-76.9400,38.8380],[-76.9750,38.8380],[-76.9750,38.8620]]]}},
-  {type:'Feature',properties:{NAME:'Navy Yard'},geometry:{type:'Polygon',coordinates:[[[-77.0030,38.8800],[-76.9860,38.8800],[-76.9860,38.8700],[-77.0030,38.8700],[-77.0030,38.8800]]]}},
-  {type:'Feature',properties:{NAME:'Southwest Waterfront'},geometry:{type:'Polygon',coordinates:[[[-77.0280,38.8800],[-77.0030,38.8800],[-77.0030,38.8620],[-77.0280,38.8620],[-77.0280,38.8800]]]}},
-  {type:'Feature',properties:{NAME:'Foggy Bottom'},geometry:{type:'Polygon',coordinates:[[[-77.0650,38.9003],[-77.0500,38.9003],[-77.0500,38.8880],[-77.0650,38.8880],[-77.0650,38.9003]]]}},
-  {type:'Feature',properties:{NAME:'Kalorama'},geometry:{type:'Polygon',coordinates:[[[-77.0550,38.9220],[-77.0360,38.9220],[-77.0360,38.9117],[-77.0550,38.9117],[-77.0550,38.9220]]]}},
-  {type:'Feature',properties:{NAME:'Cleveland Park'},geometry:{type:'Polygon',coordinates:[[[-77.0780,38.9480],[-77.0550,38.9480],[-77.0550,38.9220],[-77.0780,38.9220],[-77.0780,38.9480]]]}},
-  {type:'Feature',properties:{NAME:'Tenleytown'},geometry:{type:'Polygon',coordinates:[[[-77.0900,38.9600],[-77.0550,38.9600],[-77.0550,38.9480],[-77.0900,38.9480],[-77.0900,38.9600]]]}},
-  {type:'Feature',properties:{NAME:'Friendship Heights'},geometry:{type:'Polygon',coordinates:[[[-77.0900,38.9720],[-77.0550,38.9720],[-77.0550,38.9600],[-77.0900,38.9600],[-77.0900,38.9720]]]}},
-  {type:'Feature',properties:{NAME:'Chevy Chase'},geometry:{type:'Polygon',coordinates:[[[-77.0780,38.9900],[-77.0550,38.9900],[-77.0550,38.9720],[-77.0780,38.9720],[-77.0780,38.9900]]]}},
-  {type:'Feature',properties:{NAME:'Takoma'},geometry:{type:'Polygon',coordinates:[[[-77.0200,38.9900],[-77.0000,38.9900],[-77.0000,38.9720],[-77.0200,38.9720],[-77.0200,38.9900]]]}},
-  {type:'Feature',properties:{NAME:'Brightwood'},geometry:{type:'Polygon',coordinates:[[[-77.0360,38.9720],[-77.0100,38.9720],[-77.0100,38.9600],[-77.0360,38.9600],[-77.0360,38.9720]]]}},
-  {type:'Feature',properties:{NAME:'Manor Park'},geometry:{type:'Polygon',coordinates:[[[-77.0200,38.9720],[-76.9900,38.9720],[-76.9900,38.9600],[-77.0200,38.9600],[-77.0200,38.9720]]]}},
-  {type:'Feature',properties:{NAME:'Deanwood'},geometry:{type:'Polygon',coordinates:[[[-76.9400,38.9300],[-76.9100,38.9300],[-76.9100,38.9000],[-76.9400,38.9000],[-76.9400,38.9300]]]}},
-  {type:'Feature',properties:{NAME:'Congress Heights'},geometry:{type:'Polygon',coordinates:[[[-77.0030,38.8380],[-76.9750,38.8380],[-76.9750,38.8000],[-77.0030,38.8000],[-77.0030,38.8380]]]}},
-  {type:'Feature',properties:{NAME:'Eckington'},geometry:{type:'Polygon',coordinates:[[[-77.0030,38.9300],[-76.9900,38.9300],[-76.9900,38.9117],[-77.0030,38.9117],[-77.0030,38.9300]]]}},
-  {type:'Feature',properties:{NAME:'Bloomingdale'},geometry:{type:'Polygon',coordinates:[[[-77.0155,38.9300],[-77.0030,38.9300],[-77.0030,38.9117],[-77.0155,38.9117],[-77.0155,38.9300]]]}},
-  {type:'Feature',properties:{NAME:'LeDroit Park'},geometry:{type:'Polygon',coordinates:[[[-77.0229,38.9220],[-77.0155,38.9220],[-77.0155,38.9117],[-77.0229,38.9117],[-77.0229,38.9220]]]}},
-  {type:'Feature',properties:{NAME:'Trinidad'},geometry:{type:'Polygon',coordinates:[[[-76.9860,38.9220],[-76.9700,38.9220],[-76.9700,38.9117],[-76.9860,38.9117],[-76.9860,38.9220]]]}},
-  {type:'Feature',properties:{NAME:'Palisades'},geometry:{type:'Polygon',coordinates:[[[-77.1180,38.9300],[-77.0900,38.9300],[-77.0900,38.9000],[-77.1180,38.9000],[-77.1180,38.9300]]]}},
-  {type:'Feature',properties:{NAME:'Spring Valley'},geometry:{type:'Polygon',coordinates:[[[-77.1180,38.9480],[-77.0900,38.9480],[-77.0900,38.9300],[-77.1180,38.9300],[-77.1180,38.9480]]]}},
-  {type:'Feature',properties:{NAME:'Wesley Heights'},geometry:{type:'Polygon',coordinates:[[[-77.1180,38.9600],[-77.0900,38.9600],[-77.0900,38.9480],[-77.1180,38.9480],[-77.1180,38.9600]]]}},
-  {type:'Feature',properties:{NAME:'Glover Park'},geometry:{type:'Polygon',coordinates:[[[-77.0900,38.9220],[-77.0780,38.9220],[-77.0780,38.9003],[-77.0900,38.9003],[-77.0900,38.9220]]]}},
-  {type:'Feature',properties:{NAME:'Mount Pleasant'},geometry:{type:'Polygon',coordinates:[[[-77.0550,38.9300],[-77.0360,38.9300],[-77.0360,38.9220],[-77.0550,38.9220],[-77.0550,38.9300]]]}},
-  {type:'Feature',properties:{NAME:'Woodley Park'},geometry:{type:'Polygon',coordinates:[[[-77.0780,38.9300],[-77.0550,38.9300],[-77.0550,38.9220],[-77.0780,38.9220],[-77.0780,38.9300]]]}},
-  {type:'Feature',properties:{NAME:'Kingman Park'},geometry:{type:'Polygon',coordinates:[[[-76.9745,38.9003],[-76.9500,38.9003],[-76.9500,38.8800],[-76.9745,38.8800],[-76.9745,38.9003]]]}},
-  {type:'Feature',properties:{NAME:'Hill East'},geometry:{type:'Polygon',coordinates:[[[-76.9745,38.8800],[-76.9500,38.8800],[-76.9500,38.8620],[-76.9745,38.8620],[-76.9745,38.8800]]]}},
-  {type:'Feature',properties:{NAME:'Penn Quarter'},geometry:{type:'Polygon',coordinates:[[[-77.0280,38.9003],[-77.0155,38.9003],[-77.0155,38.8880],[-77.0280,38.8880],[-77.0280,38.9003]]]}},
-  {type:'Feature',properties:{NAME:'Mount Vernon Triangle'},geometry:{type:'Polygon',coordinates:[[[-77.0155,38.9003],[-77.0030,38.9003],[-77.0030,38.8880],[-77.0155,38.8880],[-77.0155,38.9003]]]}},
-]};
+// ── ZOOM TO NEIGHBORHOOD on dropdown select ──
+function onNbhdFilterChange(){
+  applyFilters();
+  const val=document.getElementById('nbhd-filter').value;
+  if(!val||!_nbhdGeoJSON) return;
+  // Match feature by name (case-insensitive)
+  const target=_nbhdGeoJSON.features.find(f=>{
+    const n=(f.properties.NAME||f.properties.name||'').toUpperCase();
+    return n===val.toUpperCase()||n===val.replace(/_/g,' ').toUpperCase();
+  });
+  if(target){
+    const bounds=L.geoJSON(target).getBounds();
+    if(bounds.isValid()) map.fitBounds(bounds,{padding:[30,30]});
+  }
+}
 
 function nearMe(){
   if(!navigator.geolocation)return alert('Geolocation not supported');
