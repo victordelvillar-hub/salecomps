@@ -512,6 +512,7 @@ body {
   letter-spacing: 0.3px;
 }
 .map-btn:hover { background: var(--navy-light); border-color: var(--gold); }
+.map-btn.active { background: #0a9396; border-color: #0a9396; color: var(--white); }
 .map-btn .ico { font-size: 16px; display: block; margin-bottom: 2px; }
 
 /* ── DETAIL PANEL ── */
@@ -1530,23 +1531,26 @@ function initMap(){
     drawnItems.addLayer(e.layer);
     drawPolygon=e.layer;
     _drawHandler=null;
-    document.getElementById('draw-btn').style.background='#ee9b00';
-    document.getElementById('draw-btn').textContent='✏️ Clear';
+    const btn=document.getElementById('draw-btn');
+    btn.classList.add('active');
+    btn.textContent='✏️ Clear';
     applyFilters();
   });
   map.on('draw:drawstop',function(){
     // User pressed Escape or cancelled — reset button if no polygon was committed
     if(!drawPolygon){
       _drawHandler=null;
-      document.getElementById('draw-btn').style.background='';
-      document.getElementById('draw-btn').textContent='✏️ Draw';
+      const btn=document.getElementById('draw-btn');
+      btn.classList.remove('active');
+      btn.textContent='✏️ Draw';
     }
   });
   map.on('draw:deleted',function(){
     drawPolygon=null;
     _drawHandler=null;
-    document.getElementById('draw-btn').style.background='';
-    document.getElementById('draw-btn').textContent='✏️ Draw';
+    const btn=document.getElementById('draw-btn');
+    btn.classList.remove('active');
+    btn.textContent='✏️ Draw';
     applyFilters();
   });
 }
@@ -1671,6 +1675,16 @@ function safeShowDetail(id){
   if(p) showDetail(p);
 }
 
+// ── UNIT SUFFIX HELPER ──
+function unitSuffix(p){
+  if(!p.u) return '';
+  const addr=(p.a||'').toLowerCase();
+  const unit=String(p.u).toLowerCase();
+  // Already in address if address contains '#unit' or 'unit N'
+  if(addr.includes('#'+unit)||addr.includes(' '+unit)) return '';
+  return ' #'+p.u;
+}
+
 // ── DETAIL ──
 function showDetail(p){
   // Replace mode: intercept for slot replacement
@@ -1694,7 +1708,7 @@ function showDetail(p){
   if(p.lat&&p.lng) map.panTo([p.lat,p.lng]);
 
   // Header
-  const addrDisplay=p.u&&!p.a.includes('#'+p.u)?p.a+' #'+p.u:p.a;
+  const addrDisplay=p.a+unitSuffix(p);
   document.getElementById('det-addr').textContent=addrDisplay;
   document.getElementById('det-sub').textContent='Washington, DC '+(p.z||'')+(p.sub?' · '+p.sub:'');
   document.getElementById('det-status-lbl').textContent=statusLabel(p.s);
@@ -1739,12 +1753,21 @@ function findCompsByTier(p, radiusMi){
 
   function buildPool(statusFilter){
     const seen=new Set();
+    const subjectPrice=p.sp||p.p||0;
+    const priceMin=subjectPrice*0.70;
+    const priceMax=subjectPrice*1.30;
+    function inPriceBand(c){
+      if(!subjectPrice) return true; // no subject price → skip filter
+      const cv=c.sp||c.p||0;
+      return cv>=priceMin && cv<=priceMax;
+    }
     let pool=D
       .filter(c=>{
         if(c.id===p.id) return false;
         if(!c.lat||!c.lng) return false;
         if(c.b!==p.b) return false; // same beds
         if(!statusFilter(c.s)) return false;
+        if(!inPriceBand(c)) return false; // ±30% price band
         if(c.a.split('#')[0].trim().toLowerCase()===subjectAddr) return false;
         const key=c.a.trim().toLowerCase()+'|'+(c.u||'');
         if(seen.has(key)) return false;
@@ -1763,6 +1786,7 @@ function findCompsByTier(p, radiusMi){
         .filter(c=>{
           if(c.id===p.id||!c.lat||!c.lng) return false;
           if(c.b!==p.b||!statusFilter(c.s)) return false;
+          if(!inPriceBand(c)) return false; // ±30% price band
           if(c.a.split('#')[0].trim().toLowerCase()===subjectAddr) return false;
           const key=c.a.trim().toLowerCase()+'|'+(c.u||'');
           if(seen2.has(key)) return false;
@@ -1835,7 +1859,7 @@ function toggleDraw(){
     if(_drawHandler){_drawHandler.disable();_drawHandler=null;}
     drawnItems.clearLayers();
     drawPolygon=null;
-    btn.style.background='';
+    btn.classList.remove('active');
     btn.textContent='✏️ Draw';
     applyFilters();
   } else {
@@ -1844,7 +1868,7 @@ function toggleDraw(){
       shapeOptions:{color:'#0a9396',weight:2,fillOpacity:0.1}
     });
     _drawHandler.enable();
-    btn.style.background='#0a9396';
+    btn.classList.add('active');
     btn.textContent='✏️ Drawing... (double-click to finish)';
   }
 }
@@ -1854,7 +1878,7 @@ function toggleZipShading(){
   if(radiusHeatOn){
     radiusHeatOn=false;
     if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
-    document.getElementById('radius-btn').style.background='';
+    document.getElementById('radius-btn').classList.remove('active');
     document.getElementById('radius-btn').textContent='🔥 Radius Heat';
     document.getElementById('price-heat-legend').style.display='none';
   }
@@ -1862,11 +1886,11 @@ function toggleZipShading(){
   const btn=document.getElementById('shade-btn');
   if(zipShadingOn){
     renderZipChoropleth();
-    btn.style.background='#0a9396';
+    btn.classList.add('active');
     btn.textContent='🗺️ Hide Heat';
   } else {
     if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
-    btn.style.background='';
+    btn.classList.remove('active');
     btn.textContent='🗺️ ZIP Heat';
     document.getElementById('price-heat-legend').style.display='none';
   }
@@ -1879,7 +1903,7 @@ function toggleRadiusHeat(){
   if(zipShadingOn){
     zipShadingOn=false;
     if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
-    document.getElementById('shade-btn').style.background='';
+    document.getElementById('shade-btn').classList.remove('active');
     document.getElementById('shade-btn').textContent='🗺️ ZIP Heat';
     document.getElementById('price-heat-legend').style.display='none';
   }
@@ -1887,11 +1911,11 @@ function toggleRadiusHeat(){
   const btn=document.getElementById('radius-btn');
   if(radiusHeatOn){
     renderRadiusHeat();
-    btn.style.background='#0a9396';
+    btn.classList.add('active');
     btn.textContent='🔥 Hide Radius';
   } else {
     if(zipLayer){map.removeLayer(zipLayer);zipLayer=null;}
-    btn.style.background='';
+    btn.classList.remove('active');
     btn.textContent='🔥 Radius Heat';
     document.getElementById('price-heat-legend').style.display='none';
   }
@@ -1946,18 +1970,18 @@ function renderZipChoropleth(){
   showHeatLegend(minP,maxP);
 
   function paintGeoJSON(geojson){
-    const layers=[];
     geojson.features.forEach(f=>{
-      const zip=(f.properties.ZIP||'').toString();
+      const zip=(f.properties.zip||f.properties.ZIP||'').toString();
       if(!avgs[zip]) return;
       const t=(avgs[zip]-minP)/(maxP-minP||1);
       const poly=L.geoJSON(f,{
         style:{color:'rgba(255,255,255,0.35)',weight:1.5,fillColor:heatColor(t,0.5),fillOpacity:0.55}
       }).bindTooltip('ZIP '+zip+'<br>Avg: $'+Math.round(avgs[zip]/1000)+'K',
         {permanent:false,className:'zip-tip',sticky:true});
-      layers.push(poly);
+      poly.addTo(map);
+      if(!zipLayer) zipLayer=L.layerGroup().addTo(map);
+      zipLayer.addLayer(poly);
     });
-    if(layers.length) zipLayer=L.layerGroup(layers).addTo(map);
   }
 
   // Same-origin fetch — no CORS, works from Vercel
