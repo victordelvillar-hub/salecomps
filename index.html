@@ -2107,11 +2107,11 @@ function toggleNeighborhoods(){
   if(nbhdOn){
     btn.classList.add('active');
     btn.textContent='🏘️ Hide Nbhds';
-    if(_nbhdGeoJSON){ paintNbhd(_nbhdGeoJSON); return; }
-    // Same-origin fetch — file lives in repo root
+    const val=document.getElementById('nbhd-filter').value;
+    if(_nbhdGeoJSON){ paintNbhd(_nbhdGeoJSON, val); return; }
     fetch('dc-neighborhood-boundaries.json')
       .then(r=>{ if(!r.ok) throw new Error('missing'); return r.json(); })
-      .then(geo=>{ _nbhdGeoJSON=geo; paintNbhd(geo); })
+      .then(geo=>{ _nbhdGeoJSON=geo; paintNbhd(geo, val); })
       .catch(e=>console.warn('Neighborhood GeoJSON not found — upload dc-neighborhood-boundaries.json to repo',e));
   } else {
     btn.classList.remove('active');
@@ -2120,20 +2120,21 @@ function toggleNeighborhoods(){
   }
 }
 
-function paintNbhd(geojson){
+function paintNbhd(geojson, selectedVal){
   if(nbhdLayer){ map.removeLayer(nbhdLayer); nbhdLayer=null; }
   nbhdLayer=L.geoJSON(geojson,{
-    style:{
-      color:'rgba(240,165,0,0.85)',
-      weight:2,
-      fill:false,
-      dashArray:'4,3'
+    style:function(f){
+      if(!selectedVal) return {color:'rgba(240,165,0,0.85)',weight:2,fill:false,dashArray:'4,3'};
+      const names=(f.properties.NBH_NAMES||f.properties.NAME||'').toUpperCase();
+      const v=selectedVal.toUpperCase();
+      const match=names===v||names.split(',').map(s=>s.trim()).includes(v);
+      return match
+        ? {color:'#f0a500',weight:3,fill:true,fillColor:'rgba(240,165,0,0.12)',dashArray:null}
+        : {color:'rgba(240,165,0,0.25)',weight:1,fill:false,dashArray:'4,3'};
     },
     onEachFeature:function(f,layer){
       const name=f.properties.NBH_NAMES||f.properties.NAME||f.properties.name||'';
-      if(name){
-        layer.bindTooltip(name,{permanent:false,className:'zip-tip',sticky:true});
-      }
+      if(name) layer.bindTooltip(name,{permanent:false,className:'zip-tip',sticky:true});
     }
   });
   if(nbhdOn) nbhdLayer.addTo(map);
@@ -2143,7 +2144,6 @@ function paintNbhd(geojson){
 function onNbhdFilterChange(){
   applyFilters();
   const val=document.getElementById('nbhd-filter').value;
-  if(!val){ return; }
 
   // Auto-enable boundaries if not already on
   if(!nbhdOn){
@@ -2155,11 +2155,12 @@ function onNbhdFilterChange(){
 
   function zoomToNbhd(){
     if(!_nbhdGeoJSON) return;
-    // NBH_NAMES contains comma-separated neighborhood names per cluster
+    paintNbhd(_nbhdGeoJSON, val);
+    if(!val) return;
     const target=_nbhdGeoJSON.features.find(f=>{
       const names=(f.properties.NBH_NAMES||f.properties.NAME||'').toUpperCase();
       const v=val.toUpperCase();
-      return names===v || names.split(',').map(s=>s.trim()).includes(v);
+      return names===v||names.split(',').map(s=>s.trim()).includes(v);
     });
     if(target){
       const bounds=L.geoJSON(target).getBounds();
@@ -2168,12 +2169,11 @@ function onNbhdFilterChange(){
   }
 
   if(_nbhdGeoJSON){
-    paintNbhd(_nbhdGeoJSON);
     zoomToNbhd();
   } else {
     fetch('dc-neighborhood-boundaries.json')
       .then(r=>{ if(!r.ok) throw new Error('missing'); return r.json(); })
-      .then(geo=>{ _nbhdGeoJSON=geo; paintNbhd(geo); zoomToNbhd(); })
+      .then(geo=>{ _nbhdGeoJSON=geo; zoomToNbhd(); })
       .catch(e=>console.warn('Neighborhood GeoJSON not found',e));
   }
 }
