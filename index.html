@@ -2112,7 +2112,7 @@ function toggleNeighborhoods(){
     fetch('dc-neighborhood-boundaries.json')
       .then(r=>{ if(!r.ok) throw new Error('missing'); return r.json(); })
       .then(geo=>{ _nbhdGeoJSON=geo; paintNbhd(geo, val); })
-      .catch(e=>console.warn('Neighborhood GeoJSON not found — upload dc-neighborhood-boundaries.json to repo',e));
+      .catch(e=>console.warn('Neighborhood GeoJSON not found',e));
   } else {
     btn.classList.remove('active');
     btn.textContent='🏘️ Neighborhoods';
@@ -2122,22 +2122,23 @@ function toggleNeighborhoods(){
 
 function paintNbhd(geojson, selectedVal){
   if(nbhdLayer){ map.removeLayer(nbhdLayer); nbhdLayer=null; }
-  nbhdLayer=L.geoJSON(geojson,{
-    style:function(f){
-      if(!selectedVal) return {color:'rgba(240,165,0,0.85)',weight:2,fill:false,dashArray:'4,3'};
-      const names=(f.properties.NBH_NAMES||f.properties.NAME||'').toUpperCase();
-      const v=selectedVal.toUpperCase();
-      const match=names===v||names.split(',').map(s=>s.trim()).includes(v);
-      return match
-        ? {color:'#f0a500',weight:3,fill:true,fillColor:'rgba(240,165,0,0.12)',dashArray:null}
-        : {color:'rgba(240,165,0,0.25)',weight:1,fill:false,dashArray:'4,3'};
-    },
-    onEachFeature:function(f,layer){
-      const name=f.properties.NBH_NAMES||f.properties.NAME||f.properties.name||'';
-      if(name) layer.bindTooltip(name,{permanent:false,className:'zip-tip',sticky:true});
-    }
+  nbhdLayer=L.layerGroup().addTo(map);
+
+  geojson.features.forEach(f=>{
+    const names=(f.properties.NBH_NAMES||f.properties.NAME||'').toUpperCase();
+    const v=selectedVal?selectedVal.toUpperCase():'';
+    const match=v && names.split(',').map(s=>s.trim()).some(n=>n===v);
+
+    const layer=L.geoJSON(f,{
+      style: match
+        ? {color:'#f0a500',weight:3,fill:true,fillColor:'rgba(240,165,0,0.15)',fillOpacity:1,dashArray:null}
+        : {color:'rgba(240,165,0,0.3)',weight:1,fill:false,dashArray:'4,3'}
+    });
+
+    const label=f.properties.NBH_NAMES||f.properties.NAME||'';
+    if(label) layer.bindTooltip(label,{permanent:false,className:'zip-tip',sticky:true});
+    nbhdLayer.addLayer(layer);
   });
-  if(nbhdOn) nbhdLayer.addTo(map);
 }
 
 // ── ZOOM TO NEIGHBORHOOD on dropdown select ──
