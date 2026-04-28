@@ -1154,6 +1154,31 @@ body {
   font-size: 10px;
   color: var(--gray);
   font-family: 'DM Sans', sans-serif;
+  margin-bottom: 8px;
+}
+.heat-swatch-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.heat-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.heat-swatch {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.heat-swatch-lbl {
+  font-size: 10px;
+  color: var(--gray);
+  font-family: 'DM Sans', sans-serif;
 }
 </style>
 </head>
@@ -1424,6 +1449,11 @@ body {
         <span id="heat-legend-mid">—</span>
         <span id="heat-legend-max">—</span>
       </div>
+      <div class="heat-swatch-rows">
+        <div class="heat-swatch-row"><div class="heat-swatch" style="background:rgba(10,147,160,0.75)"></div><span class="heat-swatch-lbl">Low · <span id="heat-swatch-min">—</span></span></div>
+        <div class="heat-swatch-row"><div class="heat-swatch" style="background:rgba(230,106,0,0.75)"></div><span class="heat-swatch-lbl">Mid · <span id="heat-swatch-mid">—</span></span></div>
+        <div class="heat-swatch-row"><div class="heat-swatch" style="background:rgba(239,17,17,0.75)"></div><span class="heat-swatch-lbl">High · <span id="heat-swatch-max">—</span></span></div>
+      </div>
     </div>
 
     <!-- MOBILE LIST SHEET OVERLAY -->
@@ -1462,7 +1492,7 @@ let D=[];
 let _dataLoaded=false;
 let markers={};
 let map,markerLayer;
-let activeStatus='all';
+let activeStatus='Active';
 let selectedId=null;
 let listVisible=true;
 let drawPolygon=null;
@@ -1478,7 +1508,13 @@ function tryLogin(){
       initMap();
       fetch('salecomps-data.json')
         .then(r=>r.json())
-        .then(data=>{D=data;_dataLoaded=true;map.invalidateSize();applyFilters();})
+        .then(data=>{
+          D=data;_dataLoaded=true;map.invalidateSize();
+          // Default to Active pill selected
+          const activePill=document.querySelector('.pill.active-pill');
+          if(activePill) setStatus('Active',activePill);
+          else applyFilters();
+        })
         .catch(e=>console.error('Data load failed:',e));
     });
   } else {
@@ -1509,7 +1545,7 @@ function statusLabel(s){
 
 // ── MAP ──
 function initMap(){
-  map=L.map('map',{zoomControl:false,attributionControl:false}).setView([38.9072,-77.0369],12);
+  map=L.map('map',{zoomControl:false,attributionControl:false}).setView([38.9072,-77.0369],13);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
   markerLayer=L.layerGroup().addTo(map);
 
@@ -1946,6 +1982,9 @@ function showHeatLegend(minP, maxP){
   document.getElementById('heat-legend-min').textContent=fmtK(minP);
   document.getElementById('heat-legend-mid').textContent=fmtK((minP+maxP)/2);
   document.getElementById('heat-legend-max').textContent=fmtK(maxP);
+  document.getElementById('heat-swatch-min').textContent=fmtK(minP);
+  document.getElementById('heat-swatch-mid').textContent=fmtK((minP+maxP)/2);
+  document.getElementById('heat-swatch-max').textContent=fmtK(maxP);
 }
 
 // ── ZIP CHOROPLETH — fetches dc-zip-boundaries.json (same origin, no CORS) ──
