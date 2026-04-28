@@ -2130,7 +2130,7 @@ function paintNbhd(geojson){
       dashArray:'4,3'
     },
     onEachFeature:function(f,layer){
-      const name=f.properties.NAME||f.properties.name||f.properties.NBH_NAMES||f.properties.Neighborhood||'';
+      const name=f.properties.NBH_NAMES||f.properties.NAME||f.properties.name||'';
       if(name){
         layer.bindTooltip(name,{permanent:false,className:'zip-tip',sticky:true});
       }
@@ -2153,12 +2153,13 @@ function onNbhdFilterChange(){
     btn.textContent='🏘️ Hide Nbhds';
   }
 
-  // Load GeoJSON if not yet cached, then zoom
   function zoomToNbhd(){
     if(!_nbhdGeoJSON) return;
+    // NBH_NAMES contains comma-separated neighborhood names per cluster
     const target=_nbhdGeoJSON.features.find(f=>{
-      const n=(f.properties.NAME||f.properties.name||'').toUpperCase();
-      return n===val.toUpperCase()||n===val.replace(/_/g,' ').toUpperCase();
+      const names=(f.properties.NBH_NAMES||f.properties.NAME||'').toUpperCase();
+      const v=val.toUpperCase();
+      return names===v || names.split(',').map(s=>s.trim()).includes(v);
     });
     if(target){
       const bounds=L.geoJSON(target).getBounds();
