@@ -2131,12 +2131,13 @@ function paintNbhd(geojson, selectedVal){
 
     const layer=L.geoJSON(f,{
       style: match
-        ? {color:'#f0a500',weight:3,fill:true,fillColor:'rgba(240,165,0,0.15)',fillOpacity:1,dashArray:null}
+        ? {color:'#f0a500',weight:3,fill:true,fillColor:'#f0a500',fillOpacity:0.12,dashArray:null}
         : {color:'rgba(240,165,0,0.3)',weight:1,fill:false,dashArray:'4,3'}
     });
 
     const label=f.properties.NBH_NAMES||f.properties.NAME||'';
     if(label) layer.bindTooltip(label,{permanent:false,className:'zip-tip',sticky:true});
+    layer.addTo(map);
     nbhdLayer.addLayer(layer);
   });
 }
