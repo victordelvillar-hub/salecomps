@@ -2120,22 +2120,36 @@ function toggleNeighborhoods(){
   }
 }
 
+// Strip leading code like "N1 " or "N12 " from NAME field
+function nbhdCleanName(f){
+  const raw=f.properties.DC_HPN_NAME||f.properties.NAME||f.properties.NBH_NAMES||'';
+  return raw.replace(/^N\d+\s+/i,'').trim();
+}
+
+function nbhdMatches(f, val){
+  if(!val) return false;
+  const clean=nbhdCleanName(f).toUpperCase();
+  const v=val.toUpperCase();
+  // Direct match or close enough (dropdown may have slightly different spelling)
+  if(clean===v) return true;
+  // Partial: one contains the other (handles "16TH STREET HEIGHTS" vs "16th ST HEIGHTS")
+  const cv=clean.replace(/[^A-Z0-9]/g,'');
+  const vv=v.replace(/[^A-Z0-9]/g,'');
+  return cv===vv || cv.includes(vv) || vv.includes(cv);
+}
+
 function paintNbhd(geojson, selectedVal){
   if(nbhdLayer){ map.removeLayer(nbhdLayer); nbhdLayer=null; }
   nbhdLayer=L.layerGroup().addTo(map);
 
   geojson.features.forEach(f=>{
-    const names=(f.properties.NBH_NAMES||f.properties.NAME||'').toUpperCase();
-    const v=selectedVal?selectedVal.toUpperCase():'';
-    const match=v && names.split(',').map(s=>s.trim()).some(n=>n===v);
-
+    const match=selectedVal && nbhdMatches(f, selectedVal);
     const layer=L.geoJSON(f,{
       style: match
         ? {color:'#f0a500',weight:3,fill:true,fillColor:'#f0a500',fillOpacity:0.12,dashArray:null}
         : {color:'rgba(240,165,0,0.3)',weight:1,fill:false,dashArray:'4,3'}
     });
-
-    const label=f.properties.NBH_NAMES||f.properties.NAME||'';
+    const label=nbhdCleanName(f);
     if(label) layer.bindTooltip(label,{permanent:false,className:'zip-tip',sticky:true});
     layer.addTo(map);
     nbhdLayer.addLayer(layer);
@@ -2147,7 +2161,6 @@ function onNbhdFilterChange(){
   applyFilters();
   const val=document.getElementById('nbhd-filter').value;
 
-  // Auto-enable boundaries if not already on
   if(!nbhdOn){
     nbhdOn=true;
     const btn=document.getElementById('nbhd-btn');
@@ -2159,11 +2172,7 @@ function onNbhdFilterChange(){
     if(!_nbhdGeoJSON) return;
     paintNbhd(_nbhdGeoJSON, val);
     if(!val) return;
-    const target=_nbhdGeoJSON.features.find(f=>{
-      const names=(f.properties.NBH_NAMES||f.properties.NAME||'').toUpperCase();
-      const v=val.toUpperCase();
-      return names===v||names.split(',').map(s=>s.trim()).includes(v);
-    });
+    const target=_nbhdGeoJSON.features.find(f=>nbhdMatches(f, val));
     if(target){
       const bounds=L.geoJSON(target).getBounds();
       if(bounds.isValid()) map.fitBounds(bounds,{padding:[40,40]});
