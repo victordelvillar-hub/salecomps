@@ -2160,33 +2160,18 @@ function paintNbhd(geojson, selectedVal){
 function onNbhdFilterChange(){
   applyFilters();
   const val=document.getElementById('nbhd-filter').value;
-
-  if(!nbhdOn){
-    nbhdOn=true;
-    const btn=document.getElementById('nbhd-btn');
-    btn.classList.add('active');
-    btn.textContent='🏘️ Hide Nbhds';
-  }
-
-  function zoomToNbhd(){
-    if(!_nbhdGeoJSON) return;
-    paintNbhd(_nbhdGeoJSON, val);
-    if(!val) return;
-    const target=_nbhdGeoJSON.features.find(f=>nbhdMatches(f, val));
-    if(target){
-      const bounds=L.geoJSON(target).getBounds();
-      if(bounds.isValid()) map.fitBounds(bounds,{padding:[40,40]});
-    }
-  }
-
-  if(_nbhdGeoJSON){
-    zoomToNbhd();
-  } else {
-    fetch('dc-neighborhood-boundaries.json')
-      .then(r=>{ if(!r.ok) throw new Error('missing'); return r.json(); })
-      .then(geo=>{ _nbhdGeoJSON=geo; zoomToNbhd(); })
-      .catch(e=>console.warn('Neighborhood GeoJSON not found',e));
-  }
+  if(!val) return;
+  // Zoom to the bounding box of filtered pins
+  const pts=window._lastFiltered||[];
+  const inNbhd=pts.filter(p=>p.lat&&p.lng);
+  if(!inNbhd.length) return;
+  const lats=inNbhd.map(p=>p.lat);
+  const lngs=inNbhd.map(p=>p.lng);
+  const bounds=L.latLngBounds(
+    [Math.min(...lats),Math.min(...lngs)],
+    [Math.max(...lats),Math.max(...lngs)]
+  );
+  if(bounds.isValid()) map.fitBounds(bounds,{padding:[40,40],maxZoom:15});
 }
 
 function nearMe(){
