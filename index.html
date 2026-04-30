@@ -2012,22 +2012,24 @@ function toggleRadiusHeat(){
   }
 }
 
-// Shared color scale: blue → orange → red
+// Fixed 4-tier color scale (teal → purple → pink → red), matches legend exactly
+const HEAT_TIERS=[
+  {fill:'rgba(10,147,160,0.55)',  swatch:'rgba(10,147,160,0.85)'},
+  {fill:'rgba(139,92,246,0.55)', swatch:'rgba(139,92,246,0.85)'},
+  {fill:'rgba(219,39,119,0.55)', swatch:'rgba(219,39,119,0.85)'},
+  {fill:'rgba(239,68,68,0.55)',  swatch:'rgba(239,68,68,0.85)'},
+];
+
+function heatTierIndex(t){
+  if(t<0.25) return 0;
+  if(t<0.5)  return 1;
+  if(t<0.75) return 2;
+  return 3;
+}
+
+// Keep heatColor for any legacy callers
 function heatColor(t, alpha){
-  alpha = alpha||0.55;
-  let r,g,b;
-  if(t<0.5){
-    const t2=t*2;
-    r=Math.round(10+t2*220);
-    g=Math.round(147-t2*100);
-    b=Math.round(160+t2*40);
-  } else {
-    const t2=(t-0.5)*2;
-    r=Math.round(230+t2*25);
-    g=Math.round(47-t2*47);
-    b=Math.round(200-t2*200);
-  }
-  return 'rgba('+r+','+g+','+b+','+alpha+')';
+  return HEAT_TIERS[heatTierIndex(t)].fill;
 }
 
 function showHeatLegend(minP, maxP){
@@ -2036,15 +2038,15 @@ function showHeatLegend(minP, maxP){
   const fmtK=v=>'$'+Math.round(v/1000)+'K';
   const range=maxP-minP||1;
   const t0=minP, t1=minP+range*0.25, t2=minP+range*0.5, t3=minP+range*0.75, t4=maxP;
-  const tiers=[
-    {c:heatColor(0.1,0.75), label:fmtK(t0)+' – '+fmtK(t1)},
-    {c:heatColor(0.37,0.75),label:fmtK(t1)+' – '+fmtK(t2)},
-    {c:heatColor(0.63,0.75),label:fmtK(t2)+' – '+fmtK(t3)},
-    {c:heatColor(0.9,0.75), label:fmtK(t3)+' – '+fmtK(t4)},
+  const labels=[
+    fmtK(t0)+' – '+fmtK(t1),
+    fmtK(t1)+' – '+fmtK(t2),
+    fmtK(t2)+' – '+fmtK(t3),
+    fmtK(t3)+' – '+fmtK(t4),
   ];
-  tiers.forEach((tier,i)=>{
-    document.getElementById('heat-swatch-c'+(i+1)).style.background=tier.c;
-    document.getElementById('heat-tier-'+(i+1)).textContent=tier.label;
+  HEAT_TIERS.forEach((tier,i)=>{
+    document.getElementById('heat-swatch-c'+(i+1)).style.background=tier.swatch;
+    document.getElementById('heat-tier-'+(i+1)).textContent=labels[i];
   });
 }
 
@@ -2075,7 +2077,7 @@ function renderZipChoropleth(){
       if(!avgs[zip]) return;
       const t=(avgs[zip]-minP)/(maxP-minP||1);
       const poly=L.geoJSON(f,{
-        style:{color:'rgba(255,255,255,0.35)',weight:1.5,fillColor:heatColor(t,0.5),fillOpacity:0.55}
+        style:{color:'rgba(255,255,255,0.35)',weight:1.5,fillColor:HEAT_TIERS[heatTierIndex(t)].fill,fillOpacity:0.7}
       }).bindTooltip('ZIP '+zip+'<br>Avg: $'+Math.round(avgs[zip]/1000)+'K',
         {permanent:false,className:'zip-tip',sticky:true});
       poly.addTo(map);
@@ -2142,9 +2144,9 @@ function renderRadiusHeat(){
     const clat=lats.reduce((a,b)=>a+b,0)/lats.length;
     const clng=lngs.reduce((a,b)=>a+b,0)/lngs.length;
     const t=(avg-minP)/(maxP-minP||1);
-    const color=heatColor(t,0.55);
+    const color=HEAT_TIERS[heatTierIndex(t)].fill;
     const circle=L.circle([clat,clng],{
-      radius:1400, color:'transparent', fillColor:color, fillOpacity:0.6,
+      radius:1400, color:'transparent', fillColor:color, fillOpacity:0.7,
     }).bindTooltip('ZIP '+zip+'<br>Avg: $'+Math.round(avg/1000)+'K',{permanent:false,className:'zip-tip'});
     layers.push(circle);
   });
