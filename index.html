@@ -699,38 +699,49 @@ body {
 }
 
 /* ── LEGEND ── */
-.map-legend {
+/* ── BOTTOM-LEFT LEGEND STACK ── */
+.legend-stack {
   position: absolute;
   bottom: 24px;
   left: 328px;
-  background: var(--navy);
-  border: 1px solid rgba(240,165,0,0.2);
-  border-radius: 10px;
-  padding: 10px 14px;
   z-index: 500;
   display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.map-legend {
+  background: rgba(10,22,40,0.93);
+  border: 1px solid rgba(240,165,0,0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--gray);
+  gap: 10px;
+  font-size: 12px;
+  color: var(--white);
   font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
 }
 .legend-dot {
   width: 10px; height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
 }
+@media (max-width: 768px) {
+  .legend-stack { left: 12px; }
+}
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {
   #list-panel { display: none; }
   #detail-panel { width: 100%; }
-  .map-legend { left: 12px; }
   .nav-stats { gap: 12px; }
   .nav-stat .val { font-size: 13px; }
 }
@@ -1144,16 +1155,12 @@ body {
 
 /* ── PRICE HEAT LEGEND ── */
 #price-heat-legend {
-  position: absolute;
-  bottom: 24px;
-  right: 12px;
   background: rgba(10,22,40,0.93);
   border: 1px solid rgba(240,165,0,0.2);
   border-radius: 12px;
-  padding: 16px 20px;
-  z-index: 500;
+  padding: 14px 18px;
   display: none;
-  min-width: 200px;
+  min-width: 190px;
   backdrop-filter: blur(8px);
 }
 #price-heat-legend .legend-title {
@@ -1465,32 +1472,29 @@ body {
       <button class="map-btn" onclick="toggleList()"><span class="ico">☰</span><span>List</span></button>
     </div>
 
-    <!-- LEGEND -->
-    <div class="map-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#00c48c"></div>Active</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Sold</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Contract</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Pending</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Soon</div>
-    </div>
+    <!-- LEGEND STACK: heat legend stacks above permanent status legend -->
+    <div class="legend-stack">
 
-    <!-- PRICE HEAT LEGEND -->
-    <div id="price-heat-legend">
-      <div class="legend-title" id="heat-legend-title">AVG PRICE / ZIP</div>
-      <div class="heat-swatch-rows" id="heat-tier-rows">
-        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c1"></div><span class="heat-swatch-lbl" id="heat-tier-1">—</span></div>
-        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c2"></div><span class="heat-swatch-lbl" id="heat-tier-2">—</span></div>
-        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c3"></div><span class="heat-swatch-lbl" id="heat-tier-3">—</span></div>
-        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c4"></div><span class="heat-swatch-lbl" id="heat-tier-4">—</span></div>
+      <!-- PRICE HEAT LEGEND (shown when ZIP Heat or Radius Heat active) -->
+      <div id="price-heat-legend">
+        <div class="legend-title" id="heat-legend-title">AVG PRICE / ZIP</div>
+        <div class="heat-swatch-rows" id="heat-tier-rows">
+          <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c1"></div><span class="heat-swatch-lbl" id="heat-tier-1">—</span></div>
+          <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c2"></div><span class="heat-swatch-lbl" id="heat-tier-2">—</span></div>
+          <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c3"></div><span class="heat-swatch-lbl" id="heat-tier-3">—</span></div>
+          <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c4"></div><span class="heat-swatch-lbl" id="heat-tier-4">—</span></div>
+        </div>
       </div>
-      <hr class="heat-legend-divider">
-      <div class="heat-swatch-rows">
-        <div class="heat-swatch-row"><div class="heat-dot" style="background:#00c48c"></div><span class="heat-swatch-lbl">Active</span></div>
-        <div class="heat-swatch-row"><div class="heat-dot" style="background:#ef4444"></div><span class="heat-swatch-lbl">Sold</span></div>
-        <div class="heat-swatch-row"><div class="heat-dot" style="background:#f59e0b"></div><span class="heat-swatch-lbl">Contract</span></div>
-        <div class="heat-swatch-row"><div class="heat-dot" style="background:#8b5cf6"></div><span class="heat-swatch-lbl">Pending</span></div>
-        <div class="heat-swatch-row"><div class="heat-dot" style="background:#3b82f6"></div><span class="heat-swatch-lbl">Coming Soon</span></div>
+
+      <!-- PERMANENT STATUS LEGEND -->
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#00c48c"></div>Active</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Sold</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Contract</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Pending</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Soon</div>
       </div>
+
     </div>
 
     <!-- MOBILE LIST SHEET OVERLAY -->
