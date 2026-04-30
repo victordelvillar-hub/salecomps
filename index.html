@@ -838,6 +838,24 @@ body {
 #detail-panel::-webkit-scrollbar-thumb { background: var(--gray-light); border-radius: 2px; }
 
 .zip-tip{background:rgba(13,27,42,0.9);color:#fff;border:none;border-radius:6px;font-size:.75rem;padding:4px 8px;}
+.pin-tip{background:var(--navy);color:var(--white);border:1px solid rgba(240,165,0,0.35);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;padding:8px 12px;line-height:1.5;box-shadow:0 4px 16px rgba(10,22,40,0.3);pointer-events:none;}
+.pin-tip::before{border-top-color:rgba(240,165,0,0.35)!important;}
+.pin-tip strong{font-family:'Syne',sans-serif;font-size:13px;color:var(--gold);display:block;margin-bottom:2px;}
+/* ── custom neighborhood dropdown ── */
+.nbhd-dd{position:relative;flex-shrink:0;}
+.nbhd-dd-trigger{display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:130px;max-width:160px;text-align:left;cursor:pointer;border:none;}
+.nbhd-dd-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nbhd-dd-panel{display:none;position:fixed;width:220px;background:var(--navy-mid);border:1px solid rgba(240,165,0,0.25);border-radius:10px;box-shadow:0 8px 32px rgba(10,22,40,0.4);z-index:9000;overflow:hidden;}
+.nbhd-dd-panel.open{display:block;}
+.nbhd-dd-search{width:100%;background:rgba(255,255,255,0.07);border:none;border-bottom:1px solid rgba(255,255,255,0.08);color:var(--white);font-size:12px;font-family:'DM Sans',sans-serif;padding:9px 12px;outline:none;}
+.nbhd-dd-search::placeholder{color:var(--gray);}
+.nbhd-dd-list{max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.15) transparent;}
+.nbhd-dd-list::-webkit-scrollbar{width:4px;}
+.nbhd-dd-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:4px;}
+.nbhd-dd-item{padding:8px 12px;font-size:12px;color:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.1s;}
+.nbhd-dd-item:hover{background:rgba(240,165,0,0.12);}
+.nbhd-dd-item.selected{color:var(--gold);font-weight:600;}
+.nbhd-dd-item.all-item{border-bottom:1px solid rgba(255,255,255,0.08);color:var(--gray);}
 
 /* ── CMA MODE in detail panel ── */
 .det-cma-bar {
@@ -1129,13 +1147,14 @@ body {
   position: absolute;
   bottom: 24px;
   right: 12px;
-  background: var(--navy);
-  border: 1px solid rgba(240,165,0,0.25);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(10,22,40,0.93);
+  border: 1px solid rgba(240,165,0,0.2);
+  border-radius: 12px;
+  padding: 16px 20px;
   z-index: 500;
   display: none;
-  min-width: 160px;
+  min-width: 200px;
+  backdrop-filter: blur(8px);
 }
 #price-heat-legend .legend-title {
   font-family: 'Syne', sans-serif;
@@ -1144,45 +1163,43 @@ body {
   color: var(--gray);
   letter-spacing: 2px;
   text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.heat-gradient-bar {
-  height: 10px;
-  border-radius: 5px;
-  background: linear-gradient(to right, #0a93a0, #e66a00, #ef1111);
-  margin-bottom: 5px;
-}
-.heat-legend-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--gray);
-  font-family: 'DM Sans', sans-serif;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 .heat-swatch-rows {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  gap: 7px;
 }
 .heat-swatch-row {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
 }
 .heat-swatch {
   width: 14px;
-  height: 10px;
+  height: 14px;
   border-radius: 3px;
   flex-shrink: 0;
 }
 .heat-swatch-lbl {
-  font-size: 10px;
-  color: var(--gray);
+  font-size: 12px;
+  color: var(--white);
   font-family: 'DM Sans', sans-serif;
+}
+.heat-swatch-lbl span {
+  color: var(--gray);
+  font-size: 11px;
+}
+.heat-legend-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 10px 0;
+}
+.heat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 </style>
 </head>
@@ -1267,134 +1284,146 @@ body {
         <option value="">All ZIPs</option>
         <option value="20001">20001</option><option value="20002">20002</option><option value="20003">20003</option><option value="20004">20004</option><option value="20005">20005</option><option value="20006">20006</option><option value="20007">20007</option><option value="20008">20008</option><option value="20009">20009</option><option value="20010">20010</option><option value="20011">20011</option><option value="20012">20012</option><option value="20015">20015</option><option value="20016">20016</option><option value="20017">20017</option><option value="20018">20018</option><option value="20019">20019</option><option value="20020">20020</option><option value="20024">20024</option><option value="20032">20032</option><option value="20036">20036</option><option value="20037">20037</option>
       </select>
-      <select class="fsel" id="nbhd-filter" onchange="onNbhdFilterChange()">
+      <!-- hidden select keeps existing JS working unchanged -->
+      <select id="nbhd-filter" style="display:none">
         <option value="">All Neighborhoods</option>
         <option value="14TH STREET CORRIDOR">14Th Street Corridor</option>
-<option value="16TH STREET HEIGHTS">16Th Street Heights</option>
-<option value="ADAMS MORGAN">Adams Morgan</option>
-<option value="AMERICAN UNIVERSITY PARK">American University Park</option>
-<option value="ANACOSTIA">Anacostia</option>
-<option value="BARNABY WOODS">Barnaby Woods</option>
-<option value="BARRY FARMS">Barry Farms</option>
-<option value="BELLEVUE">Bellevue</option>
-<option value="BERKLEY">Berkley</option>
-<option value="BLOOMINGDALE">Bloomingdale</option>
-<option value="BRENTWOOD">Brentwood</option>
-<option value="BRIGHTWOOD">Brightwood</option>
-<option value="BROOKLAND">Brookland</option>
-<option value="BROOKLAND GROVE">Brookland Grove</option>
-<option value="BURLEITH">Burleith</option>
-<option value="CAPITOL GATEWAY">Capitol Gateway</option>
-<option value="CAPITOL HILL">Capitol Hill</option>
-<option value="CAPITOL HILL EAST">Capitol Hill East</option>
-<option value="CAPITOL HILL NORTH">Capitol Hill North</option>
-<option value="CAPITOL QUARTER">Capitol Quarter</option>
-<option value="CARVER LANGSTON">Carver Langston</option>
-<option value="CATHEDRAL HEIGHTS">Cathedral Heights</option>
-<option value="CENTRAL">Central</option>
-<option value="CENTRAL/DOWNTOWN">Central/Downtown</option>
-<option value="CHANCELLORS ROW">Chancellors Row</option>
-<option value="CHEVY CHASE">Chevy Chase</option>
-<option value="CHILLUM">Chillum</option>
-<option value="CLEVELAND PARK">Cleveland Park</option>
-<option value="COLONIAL VILLAGE">Colonial Village</option>
-<option value="COLUMBIA HEIGHTS">Columbia Heights</option>
-<option value="CONGRESS HEIGHTS">Congress Heights</option>
-<option value="CRESTWOOD">Crestwood</option>
-<option value="DAKOTA CROSSING">Dakota Crossing</option>
-<option value="DEANWOOD">Deanwood</option>
-<option value="DOWNTOWN">Downtown</option>
-<option value="DUPONT">Dupont</option>
-<option value="DUPONT CIRCLE">Dupont Circle</option>
-<option value="DUPONT EAST">Dupont East</option>
-<option value="EASTERN MARKET">Eastern Market</option>
-<option value="ECKINGTON">Eckington</option>
-<option value="EDGEWOOD">Edgewood</option>
-<option value="FAIRFAX VILLAGE">Fairfax Village</option>
-<option value="FAIRLAWN">Fairlawn</option>
-<option value="FOGGY BOTTOM">Foggy Bottom</option>
-<option value="FOREST HILLS">Forest Hills</option>
-<option value="FORT DUPONT PARK">Fort Dupont Park</option>
-<option value="FORT LINCOLN">Fort Lincoln</option>
-<option value="FOXHALL">Foxhall</option>
-<option value="FOXHALL VILLAGE">Foxhall Village</option>
-<option value="FRIENDSHIP HEIGHTS">Friendship Heights</option>
-<option value="FT DUPONT PARK">Ft Dupont Park</option>
-<option value="GARFIELD">Garfield</option>
-<option value="GEORGETOWN">Georgetown</option>
-<option value="GLOVER PARK">Glover Park</option>
-<option value="H STREET CORRIDOR">H Street Corridor</option>
-<option value="HARBOUR SQUARE">Harbour Square</option>
-<option value="HAWTHORNE">Hawthorne</option>
-<option value="HILL CREST">Hill Crest</option>
-<option value="HILL EAST">Hill East</option>
-<option value="HILLANDALE">Hillandale</option>
-<option value="HILLCREST">Hillcrest</option>
-<option value="KALORAMA">Kalorama</option>
-<option value="KALORAMA TRIANGLE">Kalorama Triangle</option>
-<option value="KALORAMA/ADAMS MORGAN">Kalorama/Adams Morgan</option>
-<option value="KENT">Kent</option>
-<option value="KINGMAN PARK">Kingman Park</option>
-<option value="LANIER HEIGHTS">Lanier Heights</option>
-<option value="LEDROIT PARK">Ledroit Park</option>
-<option value="LILY PONDS">Lily Ponds</option>
-<option value="LOGAN">Logan</option>
-<option value="LOGAN CIRCLE">Logan Circle</option>
-<option value="LOGAN/DUPONT">Logan/Dupont</option>
-<option value="LOGAN/SHAW">Logan/Shaw</option>
-<option value="LOGAN/U STREET">Logan/U Street</option>
-<option value="MANOR PARK">Manor Park</option>
-<option value="MARSHALL HEIGHTS">Marshall Heights</option>
-<option value="MASSACHUSETTS AVENUE HEIGHTS">Massachusetts Avenue Heights</option>
-<option value="MCLEAN GARDENS">Mclean Gardens</option>
-<option value="MERIDIAN HILL">Meridian Hill</option>
-<option value="MICHIGAN PARK">Michigan Park</option>
-<option value="MOUNT PLEASANT">Mount Pleasant</option>
-<option value="MOUNT VERNON">Mount Vernon</option>
-<option value="MOUNT VERNON TRIANGLE">Mount Vernon Triangle</option>
-<option value="MT VERNON SQUARE">Mt Vernon Square</option>
-<option value="NAVY YARD">Navy Yard</option>
-<option value="NOMA">Noma</option>
-<option value="NORTH CLEVELAND PARK">North Cleveland Park</option>
-<option value="NORTH MICHIGAN PARK">North Michigan Park</option>
-<option value="OBSERVATORY CIRCLE">Observatory Circle</option>
-<option value="OLD CITY">Old City</option>
-<option value="OLD CITY #1">Old City #1</option>
-<option value="OLD CITY #2">Old City #2</option>
-<option value="PALISADES">Palisades</option>
-<option value="PARK VIEW">Park View</option>
-<option value="PENN QUARTER">Penn Quarter</option>
-<option value="PETWORTH">Petworth</option>
-<option value="POTOMAC PLACE TOWER">Potomac Place Tower</option>
-<option value="RANDLE HEIGHTS">Randle Heights</option>
-<option value="RESERVOIR DISTRICT">Reservoir District</option>
-<option value="RIGGS PARK">Riggs Park</option>
-<option value="RIVER TERRACE">River Terrace</option>
-<option value="RLA (SW)">Rla (Sw)</option>
-<option value="SHAW">Shaw</option>
-<option value="SHEPHERD PARK">Shepherd Park</option>
-<option value="SOUTHWEST WATERFRONT">Southwest Waterfront</option>
-<option value="SPRING VALLEY">Spring Valley</option>
-<option value="SW WATERFRONT">Sw Waterfront</option>
-<option value="TAKOMA">Takoma</option>
-<option value="TAKOMA PARK">Takoma Park</option>
-<option value="TENLEYTOWN">Tenleytown</option>
-<option value="TRINIDAD">Trinidad</option>
-<option value="TRUXTON CIRCLE">Truxton Circle</option>
-<option value="U STREET">U Street</option>
-<option value="U STREET CORRIDOR">U Street Corridor</option>
-<option value="VAN NESS">Van Ness</option>
-<option value="WAKEFIELD">Wakefield</option>
-<option value="WASHINGTON HIGHLANDS">Washington Highlands</option>
-<option value="WATERFRONT">Waterfront</option>
-<option value="WATERFRONT SW RLA">Waterfront Sw Rla</option>
-<option value="WATERGATE">Watergate</option>
-<option value="WESLEY HEIGHTS">Wesley Heights</option>
-<option value="WEST END">West End</option>
-<option value="WOODLEY">Woodley</option>
-<option value="WOODLEY PARK">Woodley Park</option>
-<option value="WOODRIDGE">Woodridge</option>
+        <option value="16TH STREET HEIGHTS">16Th Street Heights</option>
+        <option value="ADAMS MORGAN">Adams Morgan</option>
+        <option value="AMERICAN UNIVERSITY PARK">American University Park</option>
+        <option value="ANACOSTIA">Anacostia</option>
+        <option value="BARNABY WOODS">Barnaby Woods</option>
+        <option value="BARRY FARMS">Barry Farms</option>
+        <option value="BELLEVUE">Bellevue</option>
+        <option value="BERKLEY">Berkley</option>
+        <option value="BLOOMINGDALE">Bloomingdale</option>
+        <option value="BRENTWOOD">Brentwood</option>
+        <option value="BRIGHTWOOD">Brightwood</option>
+        <option value="BROOKLAND">Brookland</option>
+        <option value="BROOKLAND GROVE">Brookland Grove</option>
+        <option value="BURLEITH">Burleith</option>
+        <option value="CAPITOL GATEWAY">Capitol Gateway</option>
+        <option value="CAPITOL HILL">Capitol Hill</option>
+        <option value="CAPITOL HILL EAST">Capitol Hill East</option>
+        <option value="CAPITOL HILL NORTH">Capitol Hill North</option>
+        <option value="CAPITOL QUARTER">Capitol Quarter</option>
+        <option value="CARVER LANGSTON">Carver Langston</option>
+        <option value="CATHEDRAL HEIGHTS">Cathedral Heights</option>
+        <option value="CENTRAL">Central</option>
+        <option value="CENTRAL/DOWNTOWN">Central/Downtown</option>
+        <option value="CHANCELLORS ROW">Chancellors Row</option>
+        <option value="CHEVY CHASE">Chevy Chase</option>
+        <option value="CHILLUM">Chillum</option>
+        <option value="CLEVELAND PARK">Cleveland Park</option>
+        <option value="COLONIAL VILLAGE">Colonial Village</option>
+        <option value="COLUMBIA HEIGHTS">Columbia Heights</option>
+        <option value="CONGRESS HEIGHTS">Congress Heights</option>
+        <option value="CRESTWOOD">Crestwood</option>
+        <option value="DAKOTA CROSSING">Dakota Crossing</option>
+        <option value="DEANWOOD">Deanwood</option>
+        <option value="DOWNTOWN">Downtown</option>
+        <option value="DUPONT">Dupont</option>
+        <option value="DUPONT CIRCLE">Dupont Circle</option>
+        <option value="DUPONT EAST">Dupont East</option>
+        <option value="EASTERN MARKET">Eastern Market</option>
+        <option value="ECKINGTON">Eckington</option>
+        <option value="EDGEWOOD">Edgewood</option>
+        <option value="FAIRFAX VILLAGE">Fairfax Village</option>
+        <option value="FAIRLAWN">Fairlawn</option>
+        <option value="FOGGY BOTTOM">Foggy Bottom</option>
+        <option value="FOREST HILLS">Forest Hills</option>
+        <option value="FORT DUPONT PARK">Fort Dupont Park</option>
+        <option value="FORT LINCOLN">Fort Lincoln</option>
+        <option value="FOXHALL">Foxhall</option>
+        <option value="FOXHALL VILLAGE">Foxhall Village</option>
+        <option value="FRIENDSHIP HEIGHTS">Friendship Heights</option>
+        <option value="FT DUPONT PARK">Ft Dupont Park</option>
+        <option value="GARFIELD">Garfield</option>
+        <option value="GEORGETOWN">Georgetown</option>
+        <option value="GLOVER PARK">Glover Park</option>
+        <option value="H STREET CORRIDOR">H Street Corridor</option>
+        <option value="HARBOUR SQUARE">Harbour Square</option>
+        <option value="HAWTHORNE">Hawthorne</option>
+        <option value="HILL CREST">Hill Crest</option>
+        <option value="HILL EAST">Hill East</option>
+        <option value="HILLANDALE">Hillandale</option>
+        <option value="HILLCREST">Hillcrest</option>
+        <option value="KALORAMA">Kalorama</option>
+        <option value="KALORAMA TRIANGLE">Kalorama Triangle</option>
+        <option value="KALORAMA/ADAMS MORGAN">Kalorama/Adams Morgan</option>
+        <option value="KENT">Kent</option>
+        <option value="KINGMAN PARK">Kingman Park</option>
+        <option value="LANIER HEIGHTS">Lanier Heights</option>
+        <option value="LEDROIT PARK">Ledroit Park</option>
+        <option value="LILY PONDS">Lily Ponds</option>
+        <option value="LOGAN">Logan</option>
+        <option value="LOGAN CIRCLE">Logan Circle</option>
+        <option value="LOGAN/DUPONT">Logan/Dupont</option>
+        <option value="LOGAN/SHAW">Logan/Shaw</option>
+        <option value="LOGAN/U STREET">Logan/U Street</option>
+        <option value="MANOR PARK">Manor Park</option>
+        <option value="MARSHALL HEIGHTS">Marshall Heights</option>
+        <option value="MASSACHUSETTS AVENUE HEIGHTS">Massachusetts Avenue Heights</option>
+        <option value="MCLEAN GARDENS">Mclean Gardens</option>
+        <option value="MERIDIAN HILL">Meridian Hill</option>
+        <option value="MICHIGAN PARK">Michigan Park</option>
+        <option value="MOUNT PLEASANT">Mount Pleasant</option>
+        <option value="MOUNT VERNON">Mount Vernon</option>
+        <option value="MOUNT VERNON TRIANGLE">Mount Vernon Triangle</option>
+        <option value="MT VERNON SQUARE">Mt Vernon Square</option>
+        <option value="NAVY YARD">Navy Yard</option>
+        <option value="NOMA">Noma</option>
+        <option value="NORTH CLEVELAND PARK">North Cleveland Park</option>
+        <option value="NORTH MICHIGAN PARK">North Michigan Park</option>
+        <option value="OBSERVATORY CIRCLE">Observatory Circle</option>
+        <option value="OLD CITY">Old City</option>
+        <option value="OLD CITY #1">Old City #1</option>
+        <option value="OLD CITY #2">Old City #2</option>
+        <option value="PALISADES">Palisades</option>
+        <option value="PARK VIEW">Park View</option>
+        <option value="PENN QUARTER">Penn Quarter</option>
+        <option value="PETWORTH">Petworth</option>
+        <option value="POTOMAC PLACE TOWER">Potomac Place Tower</option>
+        <option value="RANDLE HEIGHTS">Randle Heights</option>
+        <option value="RESERVOIR DISTRICT">Reservoir District</option>
+        <option value="RIGGS PARK">Riggs Park</option>
+        <option value="RIVER TERRACE">River Terrace</option>
+        <option value="RLA (SW)">Rla (Sw)</option>
+        <option value="SHAW">Shaw</option>
+        <option value="SHEPHERD PARK">Shepherd Park</option>
+        <option value="SOUTHWEST WATERFRONT">Southwest Waterfront</option>
+        <option value="SPRING VALLEY">Spring Valley</option>
+        <option value="SW WATERFRONT">Sw Waterfront</option>
+        <option value="TAKOMA">Takoma</option>
+        <option value="TAKOMA PARK">Takoma Park</option>
+        <option value="TENLEYTOWN">Tenleytown</option>
+        <option value="TRINIDAD">Trinidad</option>
+        <option value="TRUXTON CIRCLE">Truxton Circle</option>
+        <option value="U STREET">U Street</option>
+        <option value="U STREET CORRIDOR">U Street Corridor</option>
+        <option value="VAN NESS">Van Ness</option>
+        <option value="WAKEFIELD">Wakefield</option>
+        <option value="WASHINGTON HIGHLANDS">Washington Highlands</option>
+        <option value="WATERFRONT">Waterfront</option>
+        <option value="WATERFRONT SW RLA">Waterfront Sw Rla</option>
+        <option value="WATERGATE">Watergate</option>
+        <option value="WESLEY HEIGHTS">Wesley Heights</option>
+        <option value="WEST END">West End</option>
+        <option value="WOODLEY">Woodley</option>
+        <option value="WOODLEY PARK">Woodley Park</option>
+        <option value="WOODRIDGE">Woodridge</option>
       </select>
+      <!-- custom neighborhood picker -->
+      <div class="nbhd-dd" id="nbhd-dd">
+        <button class="nbhd-dd-trigger fsel" id="nbhd-dd-trigger" onclick="toggleNbhdDD(event)">
+          <span id="nbhd-dd-label">All Neighborhoods</span>
+          <svg width="10" height="6" viewBox="0 0 10 6" style="margin-left:6px;flex-shrink:0"><path d="M0 0l5 6 5-6z" fill="#8892a4"/></svg>
+        </button>
+        <div class="nbhd-dd-panel" id="nbhd-dd-panel">
+          <input class="nbhd-dd-search" id="nbhd-dd-search" placeholder="Search neighborhoods…" oninput="filterNbhdList(this.value)" onclick="event.stopPropagation()">
+          <div class="nbhd-dd-list" id="nbhd-dd-list"></div>
+        </div>
+      </div>
       <select class="fsel" id="price-filter" onchange="applyFilters()">
         <option value="">Any Price</option>
         <option value="0-300000">Under $300K</option>
@@ -1447,17 +1476,20 @@ body {
 
     <!-- PRICE HEAT LEGEND -->
     <div id="price-heat-legend">
-      <div class="legend-title">Avg Price / ZIP</div>
-      <div class="heat-gradient-bar"></div>
-      <div class="heat-legend-labels">
-        <span id="heat-legend-min">—</span>
-        <span id="heat-legend-mid">—</span>
-        <span id="heat-legend-max">—</span>
+      <div class="legend-title" id="heat-legend-title">AVG PRICE / ZIP</div>
+      <div class="heat-swatch-rows" id="heat-tier-rows">
+        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c1"></div><span class="heat-swatch-lbl" id="heat-tier-1">—</span></div>
+        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c2"></div><span class="heat-swatch-lbl" id="heat-tier-2">—</span></div>
+        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c3"></div><span class="heat-swatch-lbl" id="heat-tier-3">—</span></div>
+        <div class="heat-swatch-row"><div class="heat-swatch" id="heat-swatch-c4"></div><span class="heat-swatch-lbl" id="heat-tier-4">—</span></div>
       </div>
+      <hr class="heat-legend-divider">
       <div class="heat-swatch-rows">
-        <div class="heat-swatch-row"><div class="heat-swatch" style="background:rgba(10,147,160,0.75)"></div><span class="heat-swatch-lbl">Low · <span id="heat-swatch-min">—</span></span></div>
-        <div class="heat-swatch-row"><div class="heat-swatch" style="background:rgba(230,106,0,0.75)"></div><span class="heat-swatch-lbl">Mid · <span id="heat-swatch-mid">—</span></span></div>
-        <div class="heat-swatch-row"><div class="heat-swatch" style="background:rgba(239,17,17,0.75)"></div><span class="heat-swatch-lbl">High · <span id="heat-swatch-max">—</span></span></div>
+        <div class="heat-swatch-row"><div class="heat-dot" style="background:#00c48c"></div><span class="heat-swatch-lbl">Active</span></div>
+        <div class="heat-swatch-row"><div class="heat-dot" style="background:#ef4444"></div><span class="heat-swatch-lbl">Sold</span></div>
+        <div class="heat-swatch-row"><div class="heat-dot" style="background:#f59e0b"></div><span class="heat-swatch-lbl">Contract</span></div>
+        <div class="heat-swatch-row"><div class="heat-dot" style="background:#8b5cf6"></div><span class="heat-swatch-lbl">Pending</span></div>
+        <div class="heat-swatch-row"><div class="heat-dot" style="background:#3b82f6"></div><span class="heat-swatch-lbl">Coming Soon</span></div>
       </div>
     </div>
 
@@ -1511,6 +1543,7 @@ function tryLogin(){
     document.getElementById('app').style.display='flex';
     requestAnimationFrame(()=>{
       initMap();
+      initNbhdDD();
       fetch('salecomps-data.json')
         .then(r=>r.json())
         .then(data=>{
@@ -1610,8 +1643,21 @@ function renderMap(props){
   const max=3000;
   const toShow=props.filter(p=>p.lat&&p.lng).slice(0,max);
   toShow.forEach(p=>{
+    const price=p.sp||p.op||p.p;
+    const tipLines=[
+      `<strong>${p.a||'—'}</strong>`,
+      `${statusLabel(p.s)} · ${price?fmt(price):'—'}`,
+      `${p.b||'—'} bd · ${p.ba||'—'} ba${p.sf?' · '+p.sf.toLocaleString()+' sf':''}`,
+      p.dom?`${p.dom} DOM`:'',
+    ].filter(Boolean).join('<br>');
     const m=L.marker([p.lat,p.lng],{icon:makeIcon(statusColor(p.s))})
-      .on('click',()=>showDetail(p));
+      .on('click',()=>showDetail(p))
+      .bindTooltip(tipLines,{
+        direction:'top',
+        offset:[0,-8],
+        opacity:1,
+        className:'pin-tip'
+      });
     markerLayer.addLayer(m);
     markers[p.id]=m;
   });
@@ -1984,12 +2030,18 @@ function showHeatLegend(minP, maxP){
   const leg=document.getElementById('price-heat-legend');
   leg.style.display='block';
   const fmtK=v=>'$'+Math.round(v/1000)+'K';
-  document.getElementById('heat-legend-min').textContent=fmtK(minP);
-  document.getElementById('heat-legend-mid').textContent=fmtK((minP+maxP)/2);
-  document.getElementById('heat-legend-max').textContent=fmtK(maxP);
-  document.getElementById('heat-swatch-min').textContent=fmtK(minP);
-  document.getElementById('heat-swatch-mid').textContent=fmtK((minP+maxP)/2);
-  document.getElementById('heat-swatch-max').textContent=fmtK(maxP);
+  const range=maxP-minP||1;
+  const t0=minP, t1=minP+range*0.25, t2=minP+range*0.5, t3=minP+range*0.75, t4=maxP;
+  const tiers=[
+    {c:heatColor(0.1,0.75), label:fmtK(t0)+' – '+fmtK(t1)},
+    {c:heatColor(0.37,0.75),label:fmtK(t1)+' – '+fmtK(t2)},
+    {c:heatColor(0.63,0.75),label:fmtK(t2)+' – '+fmtK(t3)},
+    {c:heatColor(0.9,0.75), label:fmtK(t3)+' – '+fmtK(t4)},
+  ];
+  tiers.forEach((tier,i)=>{
+    document.getElementById('heat-swatch-c'+(i+1)).style.background=tier.c;
+    document.getElementById('heat-tier-'+(i+1)).textContent=tier.label;
+  });
 }
 
 // ── ZIP CHOROPLETH — fetches dc-zip-boundaries.json (same origin, no CORS) ──
@@ -2523,6 +2575,123 @@ function renderDetailBody(p){
       </div>
     </div>`;
   updateCmaSummaryStats();
+}
+
+// ── Custom Neighborhood Dropdown ──
+const _nbhdOptions = [
+  {val:'', label:'All Neighborhoods'},
+  {val:'14TH STREET CORRIDOR',label:'14th Street Corridor'},{val:'16TH STREET HEIGHTS',label:'16th Street Heights'},
+  {val:'ADAMS MORGAN',label:'Adams Morgan'},{val:'AMERICAN UNIVERSITY PARK',label:'American University Park'},
+  {val:'ANACOSTIA',label:'Anacostia'},{val:'BARNABY WOODS',label:'Barnaby Woods'},
+  {val:'BARRY FARMS',label:'Barry Farms'},{val:'BELLEVUE',label:'Bellevue'},
+  {val:'BERKLEY',label:'Berkley'},{val:'BLOOMINGDALE',label:'Bloomingdale'},
+  {val:'BRENTWOOD',label:'Brentwood'},{val:'BRIGHTWOOD',label:'Brightwood'},
+  {val:'BROOKLAND',label:'Brookland'},{val:'BROOKLAND GROVE',label:'Brookland Grove'},
+  {val:'BURLEITH',label:'Burleith'},{val:'CAPITOL GATEWAY',label:'Capitol Gateway'},
+  {val:'CAPITOL HILL',label:'Capitol Hill'},{val:'CAPITOL HILL EAST',label:'Capitol Hill East'},
+  {val:'CAPITOL HILL NORTH',label:'Capitol Hill North'},{val:'CAPITOL QUARTER',label:'Capitol Quarter'},
+  {val:'CARVER LANGSTON',label:'Carver Langston'},{val:'CATHEDRAL HEIGHTS',label:'Cathedral Heights'},
+  {val:'CENTRAL',label:'Central'},{val:'CENTRAL/DOWNTOWN',label:'Central/Downtown'},
+  {val:'CHANCELLORS ROW',label:'Chancellors Row'},{val:'CHEVY CHASE',label:'Chevy Chase'},
+  {val:'CHILLUM',label:'Chillum'},{val:'CLEVELAND PARK',label:'Cleveland Park'},
+  {val:'COLONIAL VILLAGE',label:'Colonial Village'},{val:'COLUMBIA HEIGHTS',label:'Columbia Heights'},
+  {val:'CONGRESS HEIGHTS',label:'Congress Heights'},{val:'CRESTWOOD',label:'Crestwood'},
+  {val:'DAKOTA CROSSING',label:'Dakota Crossing'},{val:'DEANWOOD',label:'Deanwood'},
+  {val:'DOWNTOWN',label:'Downtown'},{val:'DUPONT',label:'Dupont'},
+  {val:'DUPONT CIRCLE',label:'Dupont Circle'},{val:'DUPONT EAST',label:'Dupont East'},
+  {val:'EASTERN MARKET',label:'Eastern Market'},{val:'ECKINGTON',label:'Eckington'},
+  {val:'EDGEWOOD',label:'Edgewood'},{val:'FAIRFAX VILLAGE',label:'Fairfax Village'},
+  {val:'FAIRLAWN',label:'Fairlawn'},{val:'FOGGY BOTTOM',label:'Foggy Bottom'},
+  {val:'FOREST HILLS',label:'Forest Hills'},{val:'FORT DUPONT PARK',label:'Fort Dupont Park'},
+  {val:'FORT LINCOLN',label:'Fort Lincoln'},{val:'FOXHALL',label:'Foxhall'},
+  {val:'FOXHALL VILLAGE',label:'Foxhall Village'},{val:'FRIENDSHIP HEIGHTS',label:'Friendship Heights'},
+  {val:'FT DUPONT PARK',label:'Ft Dupont Park'},{val:'GARFIELD',label:'Garfield'},
+  {val:'GEORGETOWN',label:'Georgetown'},{val:'GLOVER PARK',label:'Glover Park'},
+  {val:'H STREET CORRIDOR',label:'H Street Corridor'},{val:'HARBOUR SQUARE',label:'Harbour Square'},
+  {val:'HAWTHORNE',label:'Hawthorne'},{val:'HILL CREST',label:'Hill Crest'},
+  {val:'HILL EAST',label:'Hill East'},{val:'HILLANDALE',label:'Hillandale'},
+  {val:'HILLCREST',label:'Hillcrest'},{val:'KALORAMA',label:'Kalorama'},
+  {val:'KALORAMA TRIANGLE',label:'Kalorama Triangle'},{val:'KALORAMA/ADAMS MORGAN',label:'Kalorama/Adams Morgan'},
+  {val:'KENT',label:'Kent'},{val:'KINGMAN PARK',label:'Kingman Park'},
+  {val:'LANIER HEIGHTS',label:'Lanier Heights'},{val:'LEDROIT PARK',label:'Ledroit Park'},
+  {val:'LILY PONDS',label:'Lily Ponds'},{val:'LOGAN',label:'Logan'},
+  {val:'LOGAN CIRCLE',label:'Logan Circle'},{val:'LOGAN/DUPONT',label:'Logan/Dupont'},
+  {val:'LOGAN/SHAW',label:'Logan/Shaw'},{val:'LOGAN/U STREET',label:'Logan/U Street'},
+  {val:'MANOR PARK',label:'Manor Park'},{val:'MARSHALL HEIGHTS',label:'Marshall Heights'},
+  {val:'MASSACHUSETTS AVENUE HEIGHTS',label:'Massachusetts Avenue Heights'},
+  {val:'MCLEAN GARDENS',label:'Mclean Gardens'},{val:'MERIDIAN HILL',label:'Meridian Hill'},
+  {val:'MICHIGAN PARK',label:'Michigan Park'},{val:'MOUNT PLEASANT',label:'Mount Pleasant'},
+  {val:'MOUNT VERNON',label:'Mount Vernon'},{val:'MOUNT VERNON TRIANGLE',label:'Mount Vernon Triangle'},
+  {val:'MT VERNON SQUARE',label:'Mt Vernon Square'},{val:'NAVY YARD',label:'Navy Yard'},
+  {val:'NOMA',label:'Noma'},{val:'NORTH CLEVELAND PARK',label:'North Cleveland Park'},
+  {val:'NORTH MICHIGAN PARK',label:'North Michigan Park'},{val:'OBSERVATORY CIRCLE',label:'Observatory Circle'},
+  {val:'OLD CITY',label:'Old City'},{val:'OLD CITY #1',label:'Old City #1'},
+  {val:'OLD CITY #2',label:'Old City #2'},{val:'PALISADES',label:'Palisades'},
+  {val:'PARK VIEW',label:'Park View'},{val:'PENN QUARTER',label:'Penn Quarter'},
+  {val:'PETWORTH',label:'Petworth'},{val:'POTOMAC PLACE TOWER',label:'Potomac Place Tower'},
+  {val:'RANDLE HEIGHTS',label:'Randle Heights'},{val:'RESERVOIR DISTRICT',label:'Reservoir District'},
+  {val:'RIGGS PARK',label:'Riggs Park'},{val:'RIVER TERRACE',label:'River Terrace'},
+  {val:'RLA (SW)',label:'Rla (Sw)'},{val:'SHAW',label:'Shaw'},
+  {val:'SHEPHERD PARK',label:'Shepherd Park'},{val:'SOUTHWEST WATERFRONT',label:'Southwest Waterfront'},
+  {val:'SPRING VALLEY',label:'Spring Valley'},{val:'SW WATERFRONT',label:'Sw Waterfront'},
+  {val:'TAKOMA',label:'Takoma'},{val:'TAKOMA PARK',label:'Takoma Park'},
+  {val:'TENLEYTOWN',label:'Tenleytown'},{val:'TRINIDAD',label:'Trinidad'},
+  {val:'TRUXTON CIRCLE',label:'Truxton Circle'},{val:'U STREET',label:'U Street'},
+  {val:'U STREET CORRIDOR',label:'U Street Corridor'},{val:'VAN NESS',label:'Van Ness'},
+  {val:'WAKEFIELD',label:'Wakefield'},{val:'WASHINGTON HIGHLANDS',label:'Washington Highlands'},
+  {val:'WATERFRONT',label:'Waterfront'},{val:'WATERFRONT SW RLA',label:'Waterfront Sw Rla'},
+  {val:'WATERGATE',label:'Watergate'},{val:'WESLEY HEIGHTS',label:'Wesley Heights'},
+  {val:'WEST END',label:'West End'},{val:'WOODLEY',label:'Woodley'},
+  {val:'WOODLEY PARK',label:'Woodley Park'},{val:'WOODRIDGE',label:'Woodridge'}
+];
+let _nbhdOpen=false, _nbhdSelected='';
+
+function initNbhdDD(){
+  filterNbhdList('');
+  document.addEventListener('click', e=>{
+    if(!document.getElementById('nbhd-dd').contains(e.target)) closeNbhdDD();
+  });
+}
+
+function toggleNbhdDD(e){
+  e.stopPropagation();
+  _nbhdOpen=!_nbhdOpen;
+  const panel=document.getElementById('nbhd-dd-panel');
+  panel.classList.toggle('open',_nbhdOpen);
+  if(_nbhdOpen){
+    const rect=document.getElementById('nbhd-dd-trigger').getBoundingClientRect();
+    panel.style.top=(rect.bottom+4)+'px';
+    panel.style.left=rect.left+'px';
+    document.getElementById('nbhd-dd-search').value='';
+    filterNbhdList('');
+    setTimeout(()=>document.getElementById('nbhd-dd-search').focus(),50);
+  }
+}
+
+function closeNbhdDD(){
+  _nbhdOpen=false;
+  document.getElementById('nbhd-dd-panel').classList.remove('open');
+}
+
+function filterNbhdList(q){
+  const list=document.getElementById('nbhd-dd-list');
+  const lq=q.toLowerCase();
+  const matches=_nbhdOptions.filter(o=>o.val===''||o.label.toLowerCase().includes(lq));
+  list.innerHTML=matches.map(o=>`
+    <div class="nbhd-dd-item${o.val===''?' all-item':''}${o.val===_nbhdSelected?' selected':''}"
+         onclick="selectNbhd('${o.val.replace(/'/g,"\\'")}','${o.label.replace(/'/g,"\\'")}')">
+      ${o.label}
+    </div>`).join('');
+}
+
+function selectNbhd(val, label){
+  _nbhdSelected=val;
+  document.getElementById('nbhd-dd-label').textContent=val?label:'All Neighborhoods';
+  // sync hidden select so existing JS works unchanged
+  const sel=document.getElementById('nbhd-filter');
+  sel.value=val;
+  closeNbhdDD();
+  onNbhdFilterChange();
 }
 
 // ── Copy comps to clipboard ──
